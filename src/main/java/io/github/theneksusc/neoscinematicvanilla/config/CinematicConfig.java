@@ -81,6 +81,18 @@ public class CinematicConfig {
 		}
 	}
 
+	/**
+	 * Restores every setting to its default.
+	 *
+	 * <p>Implemented by replacing the section objects rather than assigning each
+	 * field back, so a field added later is covered automatically and cannot be
+	 * forgotten here.
+	 */
+	public static void resetToDefaults() {
+		instance.fog = new FogSettings();
+		instance.particles = new ParticleSettings();
+	}
+
 	/** Writes current values to disk. */
 	public static void save() {
 		if (path == null) {

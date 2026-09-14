@@ -3,6 +3,20 @@
 
   "key.neoscinematicvanilla.open_config": "Open Cinematic Vanilla settings",
 
+  "neoscinematicvanilla.section.presets": "Presets",
+  "neoscinematicvanilla.section.fog": "Dynamic Fog",
+  "neoscinematicvanilla.section.particles": "Ambient Particles",
+  "neoscinematicvanilla.section.mote_appearance": "Mote Appearance",
+  "neoscinematicvanilla.section.shafts": "Shaft Shape",
+  "neoscinematicvanilla.section.debug": "Debug",
+
+  "neoscinematicvanilla.preset.off": "Off",
+  "neoscinematicvanilla.preset.subtle": "Subtle",
+  "neoscinematicvanilla.preset.balanced": "Balanced",
+  "neoscinematicvanilla.preset.cinematic": "Cinematic",
+
+  "neoscinematicvanilla.button.reset": "Reset to Defaults",
+
   "neoscinematicvanilla.option.fog.enabled": "Dynamic Fog",
   "neoscinematicvanilla.option.fog.intensity": "Fog Intensity",
   "neoscinematicvanilla.option.fog.altitude": "Altitude Haze",

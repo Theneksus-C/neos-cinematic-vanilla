@@ -1,12 +1,16 @@
 package io.github.theneksusc.neoscinematicvanilla.gui;
 
 import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
+import io.github.theneksusc.neoscinematicvanilla.config.ConfigPresets;
 import io.github.theneksusc.neoscinematicvanilla.config.FogSettings;
 import io.github.theneksusc.neoscinematicvanilla.config.ParticleSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 
 import java.util.function.Consumer;
@@ -18,8 +22,8 @@ import java.util.function.IntConsumer;
  * <p>Built from Minecraft's own option widgets rather than a configuration
  * library, so the mod ships as a single jar with nothing else to install. It
  * extends {@link OptionsSubScreen}, which supplies the scrolling list, the
- * header and footer layout, and the done button, leaving only the options
- * themselves to declare.
+ * header and footer layout, and the done button, leaving only the contents to
+ * declare.
  *
  * <p>Values are written straight into the live config as each widget changes,
  * so the world behind the screen updates while a slider is being dragged. The
@@ -29,9 +33,8 @@ import java.util.function.IntConsumer;
  * <h2>Sliders hold integers</h2>
  *
  * <p>Minecraft's slider is integer based. A multiplier is therefore expressed
- * as an integer count of steps and mapped onto a decimal through
- * {@code xmap}, which is the same approach vanilla uses for its own percentage
- * options.
+ * as an integer count of steps and mapped onto a decimal through {@code xmap},
+ * which is the same approach vanilla uses for its own percentage options.
  */
 public class ConfigScreen extends OptionsSubScreen {
 
@@ -45,6 +48,9 @@ public class ConfigScreen extends OptionsSubScreen {
 	private static final int MIN_WORLD_Y = -64;
 	private static final int MAX_WORLD_Y = 320;
 
+	/** Footer button width, matching vanilla's own done button. */
+	private static final int FOOTER_BUTTON_WIDTH = 150;
+
 	public ConfigScreen(Screen lastScreen) {
 		super(lastScreen, Minecraft.getInstance().options, Component.translatable("neoscinematicvanilla.config.title"));
 	}
@@ -53,6 +59,48 @@ public class ConfigScreen extends OptionsSubScreen {
 	protected void addOptions() {
 		FogSettings fog = CinematicConfig.fog();
 		ParticleSettings particles = CinematicConfig.particles();
+
+		addPresets();
+		addFogSection(fog);
+		addParticleSection(particles);
+		addMoteAppearanceSection(particles);
+		addShaftSection(particles);
+		addDebugSection(fog, particles);
+	}
+
+	/**
+	 * Presets sit at the top because they are where a user starts, before
+	 * refining anything below.
+	 */
+	private void addPresets() {
+		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.presets"));
+
+		ConfigPresets[] presets = ConfigPresets.values();
+
+		// Two per row, matching how the option sliders below are laid out.
+		for (int i = 0; i < presets.length; i += 2) {
+			AbstractWidget left = presetButton(presets[i]);
+
+			if (i + 1 < presets.length) {
+				this.list.addSmall(left, presetButton(presets[i + 1]));
+			} else {
+				this.list.addBig(left);
+			}
+		}
+	}
+
+	private Button presetButton(ConfigPresets preset) {
+		return Button.builder(Component.translatable(preset.translationKey()), button -> {
+			preset.apply();
+
+			// Rebuilding re-reads every value, so the sliders below jump to
+			// what the preset just set rather than showing stale positions.
+			this.rebuildWidgets();
+		}).build();
+	}
+
+	private void addFogSection(FogSettings fog) {
+		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.fog"));
 
 		this.list.addSmall(
 				toggle("fog.enabled", fog.enabled, v -> fog.enabled = v),
@@ -78,9 +126,12 @@ public class ConfigScreen extends OptionsSubScreen {
 				elevation("fog.cave_full_below", (int) fog.caveFullBelowY, v -> fog.caveFullBelowY = v),
 				elevation("fog.cave_none_above", (int) fog.caveNoneAboveY, v -> fog.caveNoneAboveY = v));
 
-		this.list.addSmall(
-				toggle("fog.override_dimension", fog.overrideCustomDimensionFog, v -> fog.overrideCustomDimensionFog = v),
-				toggle("fog.debug", fog.debugLogging, v -> fog.debugLogging = v));
+		this.list.addBig(toggle("fog.override_dimension", fog.overrideCustomDimensionFog,
+				v -> fog.overrideCustomDimensionFog = v));
+	}
+
+	private void addParticleSection(ParticleSettings particles) {
+		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.particles"));
 
 		this.list.addSmall(
 				toggle("particles.enabled", particles.enabled, v -> particles.enabled = v),
@@ -90,9 +141,12 @@ public class ConfigScreen extends OptionsSubScreen {
 				multiplier("particles.cave", particles.caveDustDensity, v -> particles.caveDustDensity = v),
 				multiplier("particles.forest", particles.forestMoteDensity, v -> particles.forestMoteDensity = v));
 
-		this.list.addSmall(
-				multiplier("particles.jungle", particles.jungleRayDensity, v -> particles.jungleRayDensity = v),
-				multiplier("particles.mote_size", particles.moteSize, v -> particles.moteSize = v));
+		this.list.addBig(multiplier("particles.jungle", particles.jungleRayDensity,
+				v -> particles.jungleRayDensity = v));
+	}
+
+	private void addMoteAppearanceSection(ParticleSettings particles) {
+		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.mote_appearance"));
 
 		int rgb = particles.moteColorRgb();
 
@@ -105,22 +159,49 @@ public class ConfigScreen extends OptionsSubScreen {
 				ratio("particles.opacity", particles.moteOpacity, v -> particles.moteOpacity = v));
 
 		this.list.addSmall(
+				multiplier("particles.mote_size", particles.moteSize, v -> particles.moteSize = v),
+				multiplier("particles.drift", particles.moteDriftSpeed, v -> particles.moteDriftSpeed = v));
+
+		this.list.addSmall(
 				seconds("particles.lifetime", 1, 60, Math.round(particles.moteLifetimeSeconds),
 						v -> particles.moteLifetimeSeconds = v),
 				seconds("particles.fade", 0, 10, Math.round(particles.moteFadeSeconds),
 						v -> particles.moteFadeSeconds = v));
+	}
+
+	private void addShaftSection(ParticleSettings particles) {
+		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.shafts"));
 
 		this.list.addSmall(
-				multiplier("particles.drift", particles.moteDriftSpeed, v -> particles.moteDriftSpeed = v),
-				multiplier("particles.shaft_density", particles.shaftDensity, v -> particles.shaftDensity = v));
+				multiplier("particles.shaft_density", particles.shaftDensity, v -> particles.shaftDensity = v),
+				multiplier("particles.shaft_length", particles.shaftLength, v -> particles.shaftLength = v));
 
 		this.list.addSmall(
-				multiplier("particles.shaft_length", particles.shaftLength, v -> particles.shaftLength = v),
-				multiplier("particles.shaft_radius", particles.shaftRadius, v -> particles.shaftRadius = v));
+				multiplier("particles.shaft_radius", particles.shaftRadius, v -> particles.shaftRadius = v),
+				multiplier("particles.shaft_lean", particles.shaftLean, v -> particles.shaftLean = v));
+	}
+
+	private void addDebugSection(FogSettings fog, ParticleSettings particles) {
+		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.debug"));
 
 		this.list.addSmall(
-				multiplier("particles.shaft_lean", particles.shaftLean, v -> particles.shaftLean = v),
+				toggle("fog.debug", fog.debugLogging, v -> fog.debugLogging = v),
 				toggle("particles.debug", particles.debugLogging, v -> particles.debugLogging = v));
+	}
+
+	/** Adds a reset button beside vanilla's done button. */
+	@Override
+	protected void addFooter() {
+		this.layout.addToFooter(Button.builder(
+				Component.translatable("neoscinematicvanilla.button.reset"),
+				button -> {
+					CinematicConfig.resetToDefaults();
+					this.rebuildWidgets();
+				}).width(FOOTER_BUTTON_WIDTH).build());
+
+		this.layout.addToFooter(Button.builder(
+				CommonComponents.GUI_DONE,
+				button -> this.onClose()).width(FOOTER_BUTTON_WIDTH).build());
 	}
 
 	/**
@@ -141,7 +222,7 @@ public class ConfigScreen extends OptionsSubScreen {
 	 *
 	 * <p>The settings fields are floats while the slider works in doubles, and
 	 * the standard {@code DoubleConsumer} would force a cast at every call site.
-	 * One interface here keeps the twenty odd option declarations readable.
+	 * One interface here keeps the option declarations readable.
 	 */
 	@FunctionalInterface
 	private interface FloatSetter {
