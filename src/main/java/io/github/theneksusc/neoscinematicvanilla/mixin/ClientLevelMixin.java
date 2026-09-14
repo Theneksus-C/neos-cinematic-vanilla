@@ -1,6 +1,7 @@
 package io.github.theneksusc.neoscinematicvanilla.mixin;
 
 import io.github.theneksusc.neoscinematicvanilla.particle.AmbientParticleController;
+import io.github.theneksusc.neoscinematicvanilla.wind.WindSystem;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
@@ -37,6 +38,9 @@ public class ClientLevelMixin {
 			BlockPos.MutableBlockPos pos,
 			CallbackInfo ci) {
 
-		AmbientParticleController.onSample((ClientLevel) (Object) this, pos, animateRandom);
+		ClientLevel level = (ClientLevel) (Object) this;
+
+		AmbientParticleController.onSample(level, pos, animateRandom);
+		WindSystem.sampleOpenness(level, pos);
 	}
 }

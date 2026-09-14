@@ -1,0 +1,11 @@
+{
+  "ambient.wind": {
+    "subtitle": "subtitles.neoscinematicvanilla.ambient.wind",
+    "sounds": [
+      {
+        "name": "neoscinematicvanilla:ambient/wind",
+        "stream": true
+      }
+    ]
+  }
+}

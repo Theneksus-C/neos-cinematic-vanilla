@@ -5,6 +5,7 @@ import io.github.theneksusc.neoscinematicvanilla.config.ConfigPresets;
 import io.github.theneksusc.neoscinematicvanilla.config.FogSettings;
 import io.github.theneksusc.neoscinematicvanilla.config.LeafSettings;
 import io.github.theneksusc.neoscinematicvanilla.config.ParticleSettings;
+import io.github.theneksusc.neoscinematicvanilla.config.WindSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -80,6 +81,7 @@ public class ConfigScreen extends OptionsSubScreen {
 		addMoteAppearanceSection(particles);
 		addShaftSection(particles);
 		addLeafSection(CinematicConfig.leaves());
+		addWindSection(CinematicConfig.wind());
 		addDebugSection(fog, particles);
 	}
 
@@ -218,6 +220,41 @@ public class ConfigScreen extends OptionsSubScreen {
 		this.list.addSmall(
 				toggle("leaves.enabled", leaves.enabled, v -> CinematicConfig.leaves().enabled = v),
 				multiplier("leaves.frequency", leaves.frequency, v -> CinematicConfig.leaves().frequency = v));
+	}
+
+	/**
+	 * Wind produces a direction and strength that the ambient loop, motes, and
+	 * leaves all read, so its settings govern several effects at once rather
+	 * than one of its own.
+	 */
+	private void addWindSection(WindSettings wind) {
+		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.wind"));
+
+		this.list.addSmall(
+				toggle("wind.enabled", wind.enabled, v -> CinematicConfig.wind().enabled = v),
+				multiplier("wind.strength", wind.strength, v -> CinematicConfig.wind().strength = v));
+
+		this.list.addSmall(
+				ratio("wind.exposure", wind.exposureInfluence, v -> CinematicConfig.wind().exposureInfluence = v),
+				multiplier("wind.weather", wind.weatherInfluence, v -> CinematicConfig.wind().weatherInfluence = v));
+
+		this.list.addSmall(
+				multiplier("wind.gustiness", wind.gustiness, v -> CinematicConfig.wind().gustiness = v),
+				multiplier("wind.direction_speed", wind.directionChangeSpeed,
+						v -> CinematicConfig.wind().directionChangeSpeed = v));
+
+		this.list.addSmall(
+				toggle("wind.sound_enabled", wind.soundEnabled, v -> CinematicConfig.wind().soundEnabled = v),
+				ratio("wind.sound_volume", wind.soundVolume, v -> CinematicConfig.wind().soundVolume = v));
+
+		this.list.addSmall(
+				ratio("wind.sound_threshold", wind.soundThreshold, v -> CinematicConfig.wind().soundThreshold = v),
+				multiplier("wind.mote_influence", wind.moteInfluence,
+						v -> CinematicConfig.wind().moteInfluence = v));
+
+		this.list.addSmall(
+				multiplier("wind.leaf_influence", wind.leafInfluence, v -> CinematicConfig.wind().leafInfluence = v),
+				toggle("wind.debug", wind.debugLogging, v -> CinematicConfig.wind().debugLogging = v));
 	}
 
 	private void addDebugSection(FogSettings fog, ParticleSettings particles) {

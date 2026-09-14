@@ -9,6 +9,7 @@
   "neoscinematicvanilla.section.mote_appearance": "Mote Appearance",
   "neoscinematicvanilla.section.shafts": "Shaft Shape",
   "neoscinematicvanilla.section.leaves": "Falling Leaves",
+  "neoscinematicvanilla.section.wind": "Wind",
   "neoscinematicvanilla.section.debug": "Debug",
 
   "neoscinematicvanilla.preset.off": "Off",
@@ -53,5 +54,20 @@
   "neoscinematicvanilla.option.particles.debug": "Particle Debug Logging",
 
   "neoscinematicvanilla.option.leaves.enabled": "Falling Leaves",
-  "neoscinematicvanilla.option.leaves.frequency": "Leaf Frequency"
+  "neoscinematicvanilla.option.leaves.frequency": "Leaf Frequency",
+
+  "neoscinematicvanilla.option.wind.enabled": "Wind",
+  "neoscinematicvanilla.option.wind.strength": "Wind Strength",
+  "neoscinematicvanilla.option.wind.exposure": "Shelter Matters",
+  "neoscinematicvanilla.option.wind.weather": "Weather Influence",
+  "neoscinematicvanilla.option.wind.gustiness": "Gustiness",
+  "neoscinematicvanilla.option.wind.direction_speed": "Direction Change Speed",
+  "neoscinematicvanilla.option.wind.sound_enabled": "Wind Sound",
+  "neoscinematicvanilla.option.wind.sound_volume": "Wind Volume",
+  "neoscinematicvanilla.option.wind.sound_threshold": "Wind Sound Threshold",
+  "neoscinematicvanilla.option.wind.mote_influence": "Wind Moves Motes",
+  "neoscinematicvanilla.option.wind.leaf_influence": "Wind Moves Leaves",
+  "neoscinematicvanilla.option.wind.debug": "Wind Debug Logging",
+
+  "subtitles.neoscinematicvanilla.ambient.wind": "Wind blows"
 }

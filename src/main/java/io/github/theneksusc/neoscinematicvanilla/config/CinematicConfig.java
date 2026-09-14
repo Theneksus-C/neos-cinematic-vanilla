@@ -25,6 +25,7 @@ public class CinematicConfig {
 	public FogSettings fog = new FogSettings();
 	public ParticleSettings particles = new ParticleSettings();
 	public LeafSettings leaves = new LeafSettings();
+	public WindSettings wind = new WindSettings();
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final String FILE_NAME = "neoscinematicvanilla.json";
@@ -67,6 +68,10 @@ public class CinematicConfig {
 		return instance.leaves;
 	}
 
+	public static WindSettings wind() {
+		return instance.wind;
+	}
+
 	/** Reads the config from disk, writing a default file first if none exists. */
 	public static void load() {
 		path = FabricLoader.getInstance().getConfigDir().resolve(FILE_NAME);
@@ -95,6 +100,10 @@ public class CinematicConfig {
 					parsed.leaves = new LeafSettings();
 				}
 
+				if (parsed.wind == null) {
+					parsed.wind = new WindSettings();
+				}
+
 				instance = parsed;
 			}
 
@@ -115,6 +124,7 @@ public class CinematicConfig {
 		instance.fog = new FogSettings();
 		instance.particles = new ParticleSettings();
 		instance.leaves = new LeafSettings();
+		instance.wind = new WindSettings();
 	}
 
 	/** Writes current values to disk. */
