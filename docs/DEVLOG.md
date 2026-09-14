@@ -271,3 +271,65 @@ outlives the call. Config systems that reload by replacing their root will
 break every such reference, and the breakage is silent because writes still
 succeed, just into an object nothing reads. Either mutate in place on reload,
 or resolve through an accessor at the point of use.
+
+---
+
+## 2026-09-15: Wind sound never played, and wind strength oscillated
+
+Two faults found together while investigating silence.
+
+### The sound was rejected at submission
+
+**Symptom:** no wind audio at all, and no warning in the log. The sound event
+resolved, since a missing one logs "Unable to play unknown soundEvent".
+
+**Cause:** `SoundEngine.play` refuses any instance whose volume is zero at the
+moment it is submitted:
+
+```java
+if (volume == 0.0F) {
+    if (!instance.canStartSilent() && soundSource != SoundSource.MUSIC) {
+        LOGGER.debug("Skipped playing sound {}, volume was zero.");
+        return SoundEngine.PlayResult.NOT_STARTED;
+    }
+}
+```
+
+The instance deliberately starts silent so that entering a world does not begin
+with a blast, which meant it was never started at all. The rejection is logged
+at debug level, so nothing appeared in the log.
+
+**Resolution:** override `canStartSilent()` to return true. Vanilla uses the
+same override for its own fading loops, including the bee and minecart sounds.
+
+### Strength ran away to the clamp and back to zero
+
+**Symptom:** debug logging reported `strength=1.000` in clear weather, where
+roughly 0.29 was expected.
+
+**Cause:** one field served as both the eased accumulator and the scaled
+output:
+
+```java
+strength += (strengthTarget - strength) * STRENGTH_EASE;
+strength = clamp(strength * gust * exposure * config.strength, 0, 1);
+```
+
+Storing the scaled result back into the accumulator applies the gust factor
+again on every subsequent tick, compounding it. Simulating three thousand ticks
+showed the value swinging between 0.0095 and a clamped 1.0 rather than settling.
+
+**Resolution:** keep the eased base in its own field and derive the output from
+it, so nothing scaled is ever fed back:
+
+```java
+baseStrength += (strengthTarget - baseStrength) * STRENGTH_EASE;
+strength = clamp(baseStrength * gust * exposure * config.strength, 0, 1);
+```
+
+The corrected loop settles between 0.19 and 0.40 in calm clear weather.
+
+**Generalisation:** never store a scaled value back into the variable being
+eased. A smoothing filter has to keep its own state, and anything applied on top
+belongs in a separate output. Simulating the loop in isolation found this in
+seconds, where reading the code had not.

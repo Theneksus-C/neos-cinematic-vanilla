@@ -82,6 +82,20 @@ public class WindSoundInstance extends AbstractTickableSoundInstance {
 		return Mth.clamp(above * config.soundVolume, 0.0F, 1.0F);
 	}
 
+	/**
+	 * Allows the engine to start this sound while it is silent.
+	 *
+	 * <p>Without this the sound never plays at all. {@code SoundEngine.play}
+	 * rejects any instance whose volume is zero at the moment it is submitted,
+	 * and this one deliberately starts silent so that entering a world never
+	 * begins with a blast of wind. Vanilla uses the same override for sounds
+	 * that fade in, such as the bee and minecart loops.
+	 */
+	@Override
+	public boolean canStartSilent() {
+		return true;
+	}
+
 	/** Never stops on its own, so the stream is not restarted as conditions change. */
 	@Override
 	public boolean isStopped() {

@@ -87,6 +87,9 @@ public final class WindSystem {
 	private static float direction;
 	private static float directionTarget;
 	private static float strength;
+
+	/** Eased base strength. Never scaled, so the easing cannot compound. */
+	private static float baseStrength;
 	private static float strengthTarget;
 	private static float exposure;
 	private static float openness = 0.5F;
@@ -134,6 +137,7 @@ public final class WindSystem {
 
 		if (!config.enabled || level == null || player == null) {
 			strength = 0.0F;
+			baseStrength = 0.0F;
 			resetSampleCounters();
 			return;
 		}
@@ -220,7 +224,11 @@ public final class WindSystem {
 				* Math.max(0.0F, config.weatherInfluence);
 
 		strengthTarget = CALM_STRENGTH + weather;
-		strength += (strengthTarget - strength) * STRENGTH_EASE;
+
+		// Only the base is carried between ticks. Easing a value that is then
+		// scaled and stored back into itself compounds the scaling every tick,
+		// which sends it running to the clamp and then collapsing toward zero.
+		baseStrength += (strengthTarget - baseStrength) * STRENGTH_EASE;
 
 		// Two out of phase cycles, so the swell never settles into a loop the
 		// ear can pick out.
@@ -230,7 +238,7 @@ public final class WindSystem {
 
 		float gust = 1.0F + gustPhase * GUST_DEPTH * Math.max(0.0F, config.gustiness);
 
-		strength = Mth.clamp(strength * gust * exposure * Math.max(0.0F, config.strength), 0.0F, 1.0F);
+		strength = Mth.clamp(baseStrength * gust * exposure * Math.max(0.0F, config.strength), 0.0F, 1.0F);
 	}
 
 	/** Current wind strength, 0 to 1. */
@@ -261,6 +269,7 @@ public final class WindSystem {
 	/** Clears carried state so re-entering a world does not inherit the previous one's wind. */
 	public static void reset() {
 		strength = 0.0F;
+		baseStrength = 0.0F;
 		strengthTarget = 0.0F;
 		exposure = 0.0F;
 		openness = 0.5F;
