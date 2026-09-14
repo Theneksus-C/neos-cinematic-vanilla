@@ -5,7 +5,6 @@ import io.github.theneksusc.neoscinematicvanilla.config.WindSettings;
 import io.github.theneksusc.neoscinematicvanilla.wind.WindSystem;
 import net.minecraft.client.particle.FallingLeavesParticle;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -37,7 +36,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * survives and simply happens along the wind rather than around a fixed point.
  */
 @Mixin(FallingLeavesParticle.class)
-public abstract class FallingLeavesParticleMixin {
+public class FallingLeavesParticleMixin {
 
 	/** Drift a leaf reaches at full wind, in blocks per tick. */
 	private static final double LEAF_WIND_SPEED = 0.055;
@@ -48,13 +47,6 @@ public abstract class FallingLeavesParticleMixin {
 	 */
 	private static final double LEAF_WIND_RESPONSE = 0.03;
 
-	/** Declared on Particle, several classes up the hierarchy. */
-	@Shadow
-	protected double xd;
-
-	@Shadow
-	protected double zd;
-
 	@Inject(method = "tick", at = @At("HEAD"))
 	private void neoscinematicvanilla$carryOnWind(CallbackInfo ci) {
 		WindSettings wind = CinematicConfig.wind();
@@ -63,11 +55,19 @@ public abstract class FallingLeavesParticleMixin {
 			return;
 		}
 
+		// Velocity lives on Particle, which @Shadow cannot reach from a mixin on
+		// a subclass, so it is read and written through an accessor mixin
+		// applied to the class that declares it.
+		ParticleVelocityAccessor self = (ParticleVelocityAccessor) this;
+
 		double scale = LEAF_WIND_SPEED * wind.leafInfluence;
 		double targetX = WindSystem.driftX() * scale;
 		double targetZ = WindSystem.driftZ() * scale;
 
-		this.xd += (targetX - this.xd) * LEAF_WIND_RESPONSE;
-		this.zd += (targetZ - this.zd) * LEAF_WIND_RESPONSE;
+		double xd = self.neoscinematicvanilla$getXd();
+		double zd = self.neoscinematicvanilla$getZd();
+
+		self.neoscinematicvanilla$setXd(xd + (targetX - xd) * LEAF_WIND_RESPONSE);
+		self.neoscinematicvanilla$setZd(zd + (targetZ - zd) * LEAF_WIND_RESPONSE);
 	}
 }

@@ -13,30 +13,48 @@ layout(std140) uniform SamplerInfo {
 
 layout(std140) uniform GrainConfig {
     float Strength;
+    float GrainSize;
 };
 
 out vec4 fragColor;
 
-// Cheap hash noise. A texture lookup would be steadier but this costs nothing
-// and grain wants to be different at every pixel anyway.
-float hash(vec2 p) {
-    p = fract(p * vec2(443.897, 441.423));
-    p += dot(p, p.yx + 19.19);
-    return fract((p.x + p.y) * p.x);
+// Hash without sine, after Dave Hoskins.
+//
+// Inputs are reduced into the unit range on the first line, before any large
+// multiply, which is the whole point of it. An earlier version multiplied raw
+// pixel coordinates by several hundred first, reaching values near a million
+// where 32 bit float precision starts dropping low bits. Losing those bits made
+// neighbouring pixels resolve to the same value in runs, which reads as regular
+// banding rather than as noise.
+float hash13(vec3 p3) {
+    p3 = fract(p3 * 0.1031);
+    p3 += dot(p3, p3.zyx + 31.32);
+    return fract((p3.x + p3.y) * p3.z);
 }
 
 void main() {
     vec4 color = texture(InSampler, texCoord);
 
-    // Sampling in screen pixels rather than texture coordinates keeps a grain
-    // the same apparent size at any resolution. Scaled by texture coordinates
-    // it would be finer on a larger monitor, which is backwards.
-    vec2 grainCoord = texCoord * ScreenSize;
+    // Sampling in pixels of the source texture keeps a grain the same apparent
+    // size at any resolution. InSize is the sampler's own dimensions, which is
+    // what this pass is actually reading, unlike the window size.
+    vec2 pixelCoord = texCoord * InSize;
 
-    // GameTime advances every frame, so the pattern is reseeded continuously
-    // rather than sitting still like dirt on the screen.
-    float seed = GameTime * 8000.0;
-    float noise = hash(grainCoord + vec2(seed, seed * 1.37));
+    // Dividing before hashing clumps several pixels into one grain. Per pixel
+    // noise is video static; film grain is made of clumps large enough to see.
+    vec2 grainCoord = pixelCoord / max(GrainSize, 0.5);
+
+    // Time enters as a third dimension rather than as an offset added to the
+    // coordinates. Offsetting slides one pattern across the screen, which the
+    // eye follows as drifting structure.
+    float seed = fract(GameTime * 1024.0) * 137.0;
+
+    // Two octaves at unrelated scales, so neither one's residual regularity
+    // survives in the sum.
+    float coarse = hash13(vec3(grainCoord, seed));
+    float fine = hash13(vec3(grainCoord * 2.17 + 11.3, seed * 1.73 + 4.1));
+
+    float noise = coarse * 0.62 + fine * 0.38;
 
     // Real film grain lives in the shadows. Weighting it by darkness keeps
     // bright sky clean and puts the texture where it belongs, which is also

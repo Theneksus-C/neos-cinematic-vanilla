@@ -19,6 +19,11 @@
                         "name": "Strength",
                         "type": "float",
                         "value": 0.070
+                    },
+                    {
+                        "name": "GrainSize",
+                        "type": "float",
+                        "value": 1.5
                     }
                 ]
             }

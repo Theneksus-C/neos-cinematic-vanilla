@@ -374,3 +374,45 @@ looking at the screen rather than the code to notice.
 suspect the controls are in the same place before suspecting the logic. A
 layout container that silently accepts a second child into one slot gives no
 error and no visual clue beyond something being hidden.
+
+---
+
+## 2026-09-15: Film grain looked like CRT noise
+
+**Symptom:** the grain showed visible regular structure, described as looking
+like a CRT rather than film.
+
+**Cause:** two faults in the noise.
+
+The hash multiplied raw pixel coordinates by several hundred before taking a
+fraction:
+
+```glsl
+p = fract(p * vec2(443.897, 441.423));
+```
+
+At a width of 2560 that reaches values near a million, where 32 bit float
+precision begins dropping low bits. Neighbouring pixels then resolve to
+identical values in runs, which reads as regular banding rather than as noise.
+
+Separately, the noise was sampled per pixel. Per pixel white noise is video
+static. Film grain is made of clumps large enough to see.
+
+Animation also offset the sampling coordinates by a time value, which slides one
+fixed pattern across the screen. The eye follows that as drifting structure
+rather than reading it as a changing grain.
+
+**Resolution:** switched to a hash that reduces its input into the unit range
+before any large multiply, sampled at a coordinate divided by a grain size so
+several pixels share one grain, summed two octaves at unrelated scales so
+neither one's residual regularity survives, and moved time into a third hash
+dimension instead of a coordinate offset. Grain size is now per level, so
+heavier grain is also slightly coarser.
+
+Sampling also moved from `ScreenSize` to `SamplerInfo.InSize`, which is the
+dimension of the texture this pass actually reads.
+
+**Generalisation:** a hash that works in a shader toy at small coordinates can
+fall apart at screen resolution. Reduce inputs into a small range before
+multiplying, and treat any visible regularity in supposed noise as a precision
+problem before assuming the algorithm is wrong.
