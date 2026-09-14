@@ -94,11 +94,23 @@ public class ConfigScreen extends OptionsSubScreen {
 	private Button presetButton(ConfigPresets preset) {
 		return Button.builder(Component.translatable(preset.translationKey()), button -> {
 			preset.apply();
-
-			// Rebuilding re-reads every value, so the sliders below jump to
-			// what the preset just set rather than showing stale positions.
-			this.rebuildWidgets();
+			reopen();
 		}).build();
+	}
+
+	/**
+	 * Rebuilds the screen so every widget re-reads its value.
+	 *
+	 * <p>Replaces the screen rather than calling {@code rebuildWidgets}.
+	 * {@link OptionsSubScreen} holds its layout in a final field initialised
+	 * once, and its {@code init} adds to that layout on every call, so a rebuild
+	 * stacks a second title, options list, and footer onto the first. The
+	 * duplicated list backgrounds render over each other and darken the screen a
+	 * little more with every press. {@code HeaderAndFooterLayout} offers no way
+	 * to clear itself, so a fresh screen is the fix.
+	 */
+	private void reopen() {
+		this.minecraft.setScreenAndShow(new ConfigScreen(this.lastScreen));
 	}
 
 	private void addFogSection(FogSettings fog) {
@@ -210,7 +222,7 @@ public class ConfigScreen extends OptionsSubScreen {
 				Component.translatable("neoscinematicvanilla.button.reset"),
 				button -> {
 					CinematicConfig.resetToDefaults();
-					this.rebuildWidgets();
+					reopen();
 				}).width(FOOTER_BUTTON_WIDTH).build());
 
 		this.layout.addToFooter(Button.builder(

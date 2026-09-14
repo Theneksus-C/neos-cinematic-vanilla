@@ -179,3 +179,49 @@ screen, and `setScreenAndShow` remains on `Minecraft`.
 method that must still use it and read what that method delegates to. That is
 faster than guessing at renamed accessors, and it confirms the replacement is
 the one vanilla itself uses.
+
+---
+
+## 2026-09-15: Settings screen darkened with every preset press
+
+**Symptom:** pressing any preset button made the screen background darker.
+Repeated presses darkened it further, while the option values themselves were
+correct.
+
+**Cause:** `Screen.rebuildWidgets` is unsafe on an `OptionsSubScreen`. It
+clears the screen's own widget list and calls `init()` again, but
+`OptionsSubScreen` holds its layout in a field initialised once:
+
+```java
+public final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
+```
+
+and its `init()` adds to that layout rather than replacing its contents:
+
+```java
+protected void init() {
+    this.addTitle();
+    this.addContents();   // layout.addToContents(new OptionsList(...))
+    this.addFooter();     // layout.addToFooter(...)
+    this.layout.visitWidgets(this::addRenderableWidget);
+}
+```
+
+So each rebuild appended a second title, a second options list, and a second
+pair of footer buttons. The duplicated list backgrounds are semi transparent
+and rendered over each other, darkening the screen by one more layer per press.
+`HeaderAndFooterLayout` has no method to clear itself.
+
+**Resolution:** replace the screen instead of rebuilding it, which constructs a
+fresh layout:
+
+```java
+this.minecraft.setScreenAndShow(new ConfigScreen(this.lastScreen));
+```
+
+**Generalisation:** `rebuildWidgets` is only safe when a screen's `init` builds
+everything from scratch. Where a screen accumulates into a field that outlives
+`init`, rebuilding duplicates rather than refreshes. Check what a base class
+keeps across `init` before calling it twice. The visible symptom was opacity,
+which points nowhere near the actual cause, so the lead was the fact that
+repeated presses compounded it.
