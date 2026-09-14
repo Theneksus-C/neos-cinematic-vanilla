@@ -50,20 +50,28 @@ reinstalling anything.
 
 ---
 
-## 2026-09-14: Project folder could not be renamed while in use
+## 2026-09-14: Project folder could not be renamed while a handle was open
 
-**Symptom:** renaming the project directory failed with "Device or resource
-busy" under Bash and "The process cannot access the file because it is being
-used by another process" under PowerShell.
+**Symptom:** renaming the project directory failed three different ways.
+Bash reported "Device or resource busy", PowerShell reported "The process
+cannot access the file because it is being used by another process", and after
+moving every shell out of the directory it still reported "Access to the path
+is denied".
 
-**Cause:** Windows locks a directory that is the current working directory of a
-live process. The editor session had the project folder open as its working
-directory, so the handle was held continuously. This is a Windows behaviour and
-differs from Linux, where renaming a directory that a process sits in succeeds.
+**Cause:** Windows refuses to rename a directory while any process holds an
+open handle to it. The handle here was not a shell working directory, since
+moving both shells to the parent did not release it. Probing showed that files
+inside the directory could be created and deleted freely, which narrowed it to
+a handle on the directory itself rather than a permissions problem. A file
+watcher belonging to the editor was the likely holder.
 
-**Resolution:** moved the session working directory to the parent folder first,
-then performed the rename.
+**Resolution:** copied the directory to the new name, verified the copy had
+complete Git history and a clean working tree, then deleted the original.
+Deletion succeeded even though renaming did not, which confirms the lock was
+specific to the rename operation on the directory entry.
 
-**Generalisation:** on Windows, close or relocate anything sitting inside a
-directory before renaming or deleting it. Terminals, editors, and file explorer
-windows all hold locks.
+**Generalisation:** on Windows, a directory rename is far more fragile than
+creating, writing, or deleting files inside that directory. When a rename is
+refused and no shell is sitting in the folder, copy and delete instead of
+hunting for the process holding the handle. Always verify `git log` in the copy
+before removing the original.
