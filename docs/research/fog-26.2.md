@@ -132,3 +132,62 @@ on Sodium's issue tracker against another custom fog mod.
 
 Design rule: widening fog and shifting colour are safe. Making fog
 significantly denser than vanilla close to the player is not.
+
+## Correction: the Overworld does not use atmospheric fog
+
+An earlier reading of this system overstated what vanilla does. Verified
+defaults, from `EnvironmentAttributes`:
+
+```java
+FOG_START_DISTANCE   defaultValue(0.0F)      spatiallyInterpolated, syncable
+FOG_END_DISTANCE     defaultValue(1024.0F)   spatiallyInterpolated, syncable
+SKY_FOG_END_DISTANCE defaultValue(512.0F)
+CLOUD_FOG_END_DISTANCE defaultValue(2048.0F)
+```
+
+Every vanilla assignment of the atmospheric fog distances:
+
+- `DimensionTypes` sets the Nether to `FOG_START_DISTANCE = 10.0F` and
+  `FOG_END_DISTANCE = 96.0F`.
+- `OverworldBiomes` modifies only `WATER_FOG_END_DISTANCE`, on two biomes.
+
+No Overworld biome sets atmospheric fog. A 0 to 1024 band is effectively no
+fog. Runtime confirmation: 107 samples across 56 blocks of elevation change in
+a surface overworld world reported `envStart=0.0 envEnd=1024.0` without
+variation.
+
+Distance fog visible in the Overworld comes instead from `FogRenderer.setupFog`,
+which overwrites the render distance band after the environment runs:
+
+```java
+float renderDistanceFogSpan = Mth.clamp(renderDistanceInBlocks / 10.0F, 4.0F, 64.0F);
+fog.renderDistanceStart = renderDistanceInBlocks - renderDistanceFogSpan;
+fog.renderDistanceEnd = renderDistanceInBlocks;
+```
+
+At 16 chunks that is a 25.6 block fade ending at 256 blocks, the edge-of-view
+fade, unrelated to atmosphere.
+
+### Consequences
+
+1. **Multiplying vanilla's values does not work.** Scaling a 0 to 1024 band
+   produces no visible change. The mod has to introduce a band in the
+   Overworld, not scale one.
+2. **Vanilla's band must not be stomped where it is deliberately set.** The
+   Nether's 10 to 96 is an intentional look. Treat `environmentalEnd` below the
+   1024 default as a signal that something set it on purpose, and leave it
+   alone unless the user opts in.
+3. **Render distance fog stays untouched.** It is set after this mixin runs and
+   is the exact band Sodium's fog occlusion reasons about.
+
+### Revised rule
+
+```
+if vanilla's environmental band is active (end < default):
+    leave it alone by default
+else:
+    compute a band from altitude, cave depth, and weather, then apply it
+```
+
+Defaults must be subtle but non-zero, since a multiplier-only design would
+leave the mod doing nothing in the Overworld.
