@@ -6,7 +6,8 @@
 		"AtmosphericFogEnvironmentMixin",
 		"ClientLevelMixin",
 		"LeavesBlockMixin",
-		"FallingLeavesParticleMixin"
+		"FallingLeavesParticleMixin",
+		"GameRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

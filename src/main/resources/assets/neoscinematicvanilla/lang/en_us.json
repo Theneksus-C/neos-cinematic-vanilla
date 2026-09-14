@@ -10,6 +10,7 @@
   "neoscinematicvanilla.section.shafts": "Shaft Shape",
   "neoscinematicvanilla.section.leaves": "Falling Leaves",
   "neoscinematicvanilla.section.wind": "Wind",
+  "neoscinematicvanilla.section.grain": "Film Grain",
   "neoscinematicvanilla.section.debug": "Debug",
 
   "neoscinematicvanilla.preset.off": "Off",
@@ -68,6 +69,11 @@
   "neoscinematicvanilla.option.wind.mote_influence": "Wind Moves Motes",
   "neoscinematicvanilla.option.wind.leaf_influence": "Wind Moves Leaves",
   "neoscinematicvanilla.option.wind.debug": "Wind Debug Logging",
+
+  "neoscinematicvanilla.option.grain.level": "Film Grain",
+  "neoscinematicvanilla.grain.light": "Light",
+  "neoscinematicvanilla.grain.medium": "Medium",
+  "neoscinematicvanilla.grain.heavy": "Heavy",
 
   "subtitles.neoscinematicvanilla.ambient.wind": "Wind blows"
 }

@@ -3,6 +3,7 @@ package io.github.theneksusc.neoscinematicvanilla.gui;
 import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
 import io.github.theneksusc.neoscinematicvanilla.config.ConfigPresets;
 import io.github.theneksusc.neoscinematicvanilla.config.FogSettings;
+import io.github.theneksusc.neoscinematicvanilla.config.GrainSettings;
 import io.github.theneksusc.neoscinematicvanilla.config.LeafSettings;
 import io.github.theneksusc.neoscinematicvanilla.config.ParticleSettings;
 import io.github.theneksusc.neoscinematicvanilla.config.WindSettings;
@@ -86,6 +87,7 @@ public class ConfigScreen extends OptionsSubScreen {
 		addShaftSection(particles);
 		addLeafSection(CinematicConfig.leaves());
 		addWindSection(CinematicConfig.wind());
+		addGrainSection();
 		addDebugSection(fog, particles);
 	}
 
@@ -259,6 +261,33 @@ public class ConfigScreen extends OptionsSubScreen {
 		this.list.addSmall(
 				multiplier("wind.leaf_influence", wind.leafInfluence, v -> CinematicConfig.wind().leafInfluence = v),
 				toggle("wind.debug", wind.debugLogging, v -> CinematicConfig.wind().debugLogging = v));
+	}
+
+	/**
+	 * Grain is a single stepped setting rather than a slider, because a post
+	 * effect's uniforms are baked when it is built and one effect file ships per
+	 * level. Naming the steps is clearer than a slider that silently snaps.
+	 */
+	private void addGrainSection() {
+		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.grain"));
+
+		this.list.addBig(integerSlider(
+				"grain.level",
+				GrainSettings.LEVEL_OFF,
+				GrainSettings.LEVEL_MAX,
+				CinematicConfig.grain().level,
+				v -> CinematicConfig.grain().level = v,
+				ConfigScreen::grainLevelName));
+	}
+
+	/** Names the grain steps, since the raw numbers would mean nothing to a reader. */
+	private static String grainLevelName(int level) {
+		return switch (level) {
+			case 1 -> Component.translatable("neoscinematicvanilla.grain.light").getString();
+			case 2 -> Component.translatable("neoscinematicvanilla.grain.medium").getString();
+			case 3 -> Component.translatable("neoscinematicvanilla.grain.heavy").getString();
+			default -> CommonComponents.OPTION_OFF.getString();
+		};
 	}
 
 	private void addDebugSection(FogSettings fog, ParticleSettings particles) {
