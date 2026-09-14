@@ -1,0 +1,30 @@
+# Gradle build system
+.gradle/
+build/
+
+# The Gradle wrapper jar must be committed so the project builds anywhere
+!gradle/wrapper/gradle-wrapper.jar
+
+# Fabric Loom generated files
+.fabric/
+remappedSrc/
+
+# Development client game directory (worlds, configs, logs, screenshots)
+run/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Eclipse and VS Code
+.classpath
+.project
+.settings/
+.vscode/
+
+# Operating system cruft
+.DS_Store
+Thumbs.db
