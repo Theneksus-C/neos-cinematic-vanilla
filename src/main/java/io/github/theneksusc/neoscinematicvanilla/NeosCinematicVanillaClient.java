@@ -1,5 +1,6 @@
 package io.github.theneksusc.neoscinematicvanilla;
 
+import io.github.theneksusc.neoscinematicvanilla.config.FogConfig;
 import net.fabricmc.api.ClientModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +10,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Fabric calls {@link #onInitializeClient()} once during client startup,
  * after the game is in a mod-load-ready state but before the main menu appears.
- * Atmosphere systems will be registered here as they are built.
+ * Atmosphere systems are registered here as they are built.
  *
  * <p>The mod is declared client-only in {@code fabric.mod.json}, so Fabric will
  * refuse to load it on a dedicated server rather than failing at runtime.
@@ -24,6 +25,7 @@ public class NeosCinematicVanillaClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		LOGGER.info("Neo's Cinematic Vanilla initialising");
+		FogConfig.load();
+		LOGGER.info("Neo's Cinematic Vanilla initialised");
 	}
 }
