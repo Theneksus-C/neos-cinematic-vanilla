@@ -333,3 +333,44 @@ The corrected loop settles between 0.19 and 0.40 in calm clear weather.
 eased. A smoothing filter has to keep its own state, and anything applied on top
 belongs in a separate output. Simulating the loop in isolation found this in
 seconds, where reading the code had not.
+
+---
+
+## 2026-09-15: The Done button was actually the Reset button
+
+**Symptom:** pressing Done in the settings screen reverted every setting to its
+defaults instead of closing. Reported twice, and an earlier fix to how config
+objects are referenced did not change it.
+
+**Cause:** the footer held two overlapping buttons.
+`HeaderAndFooterLayout.addToFooter` places one element per slot, so adding two
+buttons to it directly positions them identically rather than side by side:
+
+```java
+this.layout.addToFooter(resetButton);   // added first
+this.layout.addToFooter(doneButton);    // drawn on top, same position
+```
+
+Done rendered over Reset, so only one button was visible, and the click went to
+Reset because it was added first. Every press of what looked like Done was a
+press of Reset.
+
+**Resolution:** put both inside a horizontal layout, which is how vanilla does
+it everywhere with more than one footer button:
+
+```java
+LinearLayout footer = this.layout.addToFooter(LinearLayout.horizontal().spacing(8));
+footer.addChild(resetButton);
+footer.addChild(doneButton);
+```
+
+**What actually found it:** the question "is the reset button in the same place
+as the done button?" Two rounds of reading the config and screen lifecycle code
+had found nothing, because nothing was wrong there. The screenshots showed a
+single footer button the whole time, which was the evidence, and it took someone
+looking at the screen rather than the code to notice.
+
+**Generalisation:** when a control does what a different control should do,
+suspect the controls are in the same place before suspecting the logic. A
+layout container that silently accepts a second child into one slot gives no
+error and no visual clue beyond something being hidden.

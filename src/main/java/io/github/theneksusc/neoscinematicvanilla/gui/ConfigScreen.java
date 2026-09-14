@@ -10,6 +10,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
 import net.minecraft.network.chat.CommonComponents;
@@ -52,6 +53,9 @@ public class ConfigScreen extends OptionsSubScreen {
 
 	/** Footer button width, matching vanilla's own done button. */
 	private static final int FOOTER_BUTTON_WIDTH = 150;
+
+	/** Gap between the two footer buttons, matching vanilla's spacing. */
+	private static final int FOOTER_BUTTON_SPACING = 8;
 
 	public ConfigScreen(Screen lastScreen) {
 		super(lastScreen, Minecraft.getInstance().options, Component.translatable("neoscinematicvanilla.config.title"));
@@ -265,17 +269,27 @@ public class ConfigScreen extends OptionsSubScreen {
 				toggle("particles.debug", particles.debugLogging, v -> CinematicConfig.particles().debugLogging = v));
 	}
 
-	/** Adds a reset button beside vanilla's done button. */
+	/**
+	 * Adds a reset button beside vanilla's done button.
+	 *
+	 * <p>Both go inside a horizontal layout. The footer holds one element, so
+	 * adding two buttons to it directly places them at the same position, one
+	 * on top of the other. Only the upper one is visible, while the one added
+	 * first receives the clicks, which makes the visible button silently do the
+	 * wrong thing.
+	 */
 	@Override
 	protected void addFooter() {
-		this.layout.addToFooter(Button.builder(
+		LinearLayout footer = this.layout.addToFooter(LinearLayout.horizontal().spacing(FOOTER_BUTTON_SPACING));
+
+		footer.addChild(Button.builder(
 				Component.translatable("neoscinematicvanilla.button.reset"),
 				button -> {
 					CinematicConfig.resetToDefaults();
 					reopen();
 				}).width(FOOTER_BUTTON_WIDTH).build());
 
-		this.layout.addToFooter(Button.builder(
+		footer.addChild(Button.builder(
 				CommonComponents.GUI_DONE,
 				button -> this.onClose()).width(FOOTER_BUTTON_WIDTH).build());
 	}
