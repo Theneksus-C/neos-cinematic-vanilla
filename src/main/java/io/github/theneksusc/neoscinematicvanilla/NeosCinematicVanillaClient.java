@@ -1,6 +1,7 @@
 package io.github.theneksusc.neoscinematicvanilla;
 
 import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
+import io.github.theneksusc.neoscinematicvanilla.gui.ModKeys;
 import io.github.theneksusc.neoscinematicvanilla.particle.DustMoteParticle;
 import io.github.theneksusc.neoscinematicvanilla.particle.ModParticles;
 import net.fabricmc.api.ClientModInitializer;
@@ -34,6 +35,8 @@ public class NeosCinematicVanillaClient implements ClientModInitializer {
 		// must be registered before the particle engine loads its sprites.
 		ModParticles.register();
 		ParticleProviderRegistry.getInstance().register(ModParticles.DUST_MOTE, DustMoteParticle.Provider::new);
+
+		ModKeys.register();
 
 		LOGGER.info("Neo's Cinematic Vanilla initialised");
 	}

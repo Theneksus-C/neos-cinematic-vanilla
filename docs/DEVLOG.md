@@ -159,3 +159,23 @@ competing with it.
 blend must be vanilla's live output, not a constant chosen to approximate it.
 Any approximation becomes a discontinuity at the point where the effect fades
 out, and that point is exactly where it is most visible.
+
+---
+
+## 2026-09-14: Screen state moved off Minecraft in 26.2
+
+**Symptom:** `cannot find symbol: variable screen, location: variable client of
+type Minecraft` when checking whether a screen was already open.
+
+**Cause:** 26.2 moved screen handling out of `Minecraft` and onto the `Gui`
+class. `Minecraft.screen` no longer exists in any form, public or private.
+Reading vanilla's own `setScreenAndShow` showed it delegating to
+`this.gui.setScreen(screen)`.
+
+**Resolution:** `Minecraft.getInstance().gui.screen()` returns the current
+screen, and `setScreenAndShow` remains on `Minecraft`.
+
+**Generalisation:** when a field vanishes between versions, find a vanilla
+method that must still use it and read what that method delegates to. That is
+faster than guessing at renamed accessors, and it confirms the replacement is
+the one vanilla itself uses.
