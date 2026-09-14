@@ -5,7 +5,8 @@
 	"client": [
 		"AtmosphericFogEnvironmentMixin",
 		"ClientLevelMixin",
-		"LeavesBlockMixin"
+		"LeavesBlockMixin",
+		"FallingLeavesParticleMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

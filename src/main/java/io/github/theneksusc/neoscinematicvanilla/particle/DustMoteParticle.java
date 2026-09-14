@@ -2,6 +2,8 @@ package io.github.theneksusc.neoscinematicvanilla.particle;
 
 import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
 import io.github.theneksusc.neoscinematicvanilla.config.ParticleSettings;
+import io.github.theneksusc.neoscinematicvanilla.config.WindSettings;
+import io.github.theneksusc.neoscinematicvanilla.wind.WindSystem;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
@@ -61,11 +63,25 @@ public class DustMoteParticle extends SingleQuadParticle {
 	/** Shortest fade that still reads as a fade rather than a pop, in ticks. */
 	private static final int MIN_FADE_TICKS = 1;
 
+	/**
+	 * Drift a mote reaches at full wind, in blocks per tick. A mote is light
+	 * enough to be carried readily, so this dominates its own idle drift.
+	 */
+	private static final double WIND_DRIFT_SPEED = 0.025;
+
 	/** Opacity this mote reaches at full fade in. */
 	private final float peakAlpha;
 
 	/** Length of this mote's fade at each end of its life, in ticks. */
 	private final int fadeTicks;
+
+	/**
+	 * The mote's own idle drift, kept so wind can be added to it rather than
+	 * accumulated into it. Writing wind into the velocity each tick would
+	 * compound, since nothing here damps velocity.
+	 */
+	private final double baseXd;
+	private final double baseZd;
 
 	protected DustMoteParticle(
 			ClientLevel level,
@@ -99,9 +115,12 @@ public class DustMoteParticle extends SingleQuadParticle {
 		this.gravity = 0.0F;
 
 		double drift = Math.max(0.0F, config.moteDriftSpeed);
-		this.xd = (random.nextDouble() - 0.5) * BASE_HORIZONTAL_DRIFT * drift;
+		this.baseXd = (random.nextDouble() - 0.5) * BASE_HORIZONTAL_DRIFT * drift;
+		this.baseZd = (random.nextDouble() - 0.5) * BASE_HORIZONTAL_DRIFT * drift;
+
+		this.xd = this.baseXd;
 		this.yd = -(BASE_MIN_FALL_SPEED + random.nextDouble() * BASE_FALL_SPEED_VARIATION) * drift;
-		this.zd = (random.nextDouble() - 0.5) * BASE_HORIZONTAL_DRIFT * drift;
+		this.zd = this.baseZd;
 
 		int rgb = config.moteColorRgb();
 		this.rCol = ((rgb >> 16) & 0xFF) / 255.0F;
@@ -118,6 +137,8 @@ public class DustMoteParticle extends SingleQuadParticle {
 
 	@Override
 	public void tick() {
+		applyWind();
+
 		super.tick();
 
 		if (this.removed) {
@@ -125,6 +146,29 @@ public class DustMoteParticle extends SingleQuadParticle {
 		}
 
 		this.alpha = alphaForAge();
+	}
+
+	/**
+	 * Sets velocity from the mote's own drift plus the current wind.
+	 *
+	 * <p>Assigned rather than accumulated. Velocity here is never damped, since
+	 * friction is one, so adding wind every tick would compound into a mote
+	 * shooting off. Assigning also means motes respond to a gust dying away,
+	 * not just to it arriving.
+	 */
+	private void applyWind() {
+		WindSettings wind = CinematicConfig.wind();
+
+		if (!wind.enabled || wind.moteInfluence <= 0.0F) {
+			this.xd = this.baseXd;
+			this.zd = this.baseZd;
+			return;
+		}
+
+		double scale = WIND_DRIFT_SPEED * wind.moteInfluence;
+
+		this.xd = this.baseXd + WindSystem.driftX() * scale;
+		this.zd = this.baseZd + WindSystem.driftZ() * scale;
 	}
 
 	/** Ramps opacity up at the start of life and back down at the end. */
