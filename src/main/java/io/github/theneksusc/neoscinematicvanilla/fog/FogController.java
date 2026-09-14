@@ -50,8 +50,11 @@ public final class FogController {
 	/** Elevation at or below which enclosure counts fully as being underground. */
 	private static final float CAVE_FLOOR_Y = 20.0F;
 
-	/** Peak density contributed by low elevation alone. */
-	private static final float MAX_ALTITUDE_DENSITY = 0.18F;
+	/**
+	 * Peak density contributed by low elevation alone. Tuned down from 0.18
+	 * after play testing, which read as slightly too heavy at ground level.
+	 */
+	private static final float MAX_ALTITUDE_DENSITY = 0.14F;
 
 	/** Peak density contributed underground. */
 	private static final float MAX_CAVE_DENSITY = 1.0F;

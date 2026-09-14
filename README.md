@@ -70,8 +70,8 @@ Launches Minecraft with the mod loaded. The game directory is `run/`.
 
 ## Status
 
-Base build working. The mod compiles, packages, and loads on Minecraft 26.2.
-No atmosphere features implemented yet.
+Dynamic fog implemented and tuned. Altitude, cave depth, and weather drive an
+atmospheric fog band, configurable at runtime. Remaining features not started.
 
 ## Documentation
 
