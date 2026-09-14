@@ -1,7 +1,10 @@
 package io.github.theneksusc.neoscinematicvanilla;
 
 import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
+import io.github.theneksusc.neoscinematicvanilla.particle.DustMoteParticle;
+import io.github.theneksusc.neoscinematicvanilla.particle.ModParticles;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +29,12 @@ public class NeosCinematicVanillaClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		CinematicConfig.load();
+
+		// The type must exist before anything can spawn it, and the provider
+		// must be registered before the particle engine loads its sprites.
+		ModParticles.register();
+		ParticleProviderRegistry.getInstance().register(ModParticles.DUST_MOTE, DustMoteParticle.SunlitProvider::new);
+
 		LOGGER.info("Neo's Cinematic Vanilla initialised");
 	}
 }

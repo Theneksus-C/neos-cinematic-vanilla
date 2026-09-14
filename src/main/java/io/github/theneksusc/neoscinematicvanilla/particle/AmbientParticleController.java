@@ -5,7 +5,6 @@ import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
 import io.github.theneksusc.neoscinematicvanilla.config.ParticleSettings;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LightLayer;
@@ -33,18 +32,18 @@ import net.minecraft.world.level.block.state.BlockState;
  * within a radius of it. A line reads as a row of dots, whereas a filled
  * volume reads as air catching light.
  *
- * <h2>Why this particle</h2>
+ * <h2>Why a custom particle</h2>
  *
- * <p>Steady state count is spawn rate multiplied by lifetime, and lifetime is
- * the scarce resource here. {@code DUST} accepts a colour and a size but
- * divides its lifetime by that size, leaving small motes alive for well under a
- * second. {@code SPORE_BLOSSOM_AIR} lives 500 to 1000 ticks but its provider
- * hardcodes a green tint. {@code WHITE_ASH} lives 20 to 100 ticks with no
- * colour override and zero gravity, which is the longest any neutral mote
- * lasts, so it is used everywhere despite offering no size control.
+ * <p>Motes use {@link ModParticles#DUST_MOTE} rather than anything vanilla.
+ * No vanilla particle is simultaneously tintable, long lived, and free of
+ * built in motion: {@code DUST} divides its lifetime by its size,
+ * {@code WHITE_ASH} hardcodes a pale grey and decelerates a velocity of its
+ * own, and {@code SPORE_BLOSSOM_AIR} hardcodes green. See
+ * {@link DustMoteParticle} for what the replacement controls.
  *
- * <p>Its provider also ignores the velocity passed to it and generates a slow
- * drift of its own, which is why zero velocity is passed here.
+ * <p>Its lifetime of 240 to 480 ticks is far longer than any of those, so
+ * spawn rates here are correspondingly low: steady state count is spawn rate
+ * multiplied by lifetime.
  */
 public final class AmbientParticleController {
 
@@ -56,12 +55,15 @@ public final class AmbientParticleController {
 	private static final float SAMPLE_GATE = 0.003F;
 
 	/**
-	 * Chance a surviving candidate becomes a shaft, per source. Low because
-	 * each shaft is now many motes rather than one.
+	 * Chance a surviving candidate becomes a shaft, per source. Low because each
+	 * shaft is many motes, and lower again because the custom mote lives roughly
+	 * eight times as long as the vanilla particle it replaced. Steady state
+	 * count is spawn rate multiplied by lifetime, so a longer lived particle
+	 * needs a proportionally lower rate to look the same.
 	 */
-	private static final float CAVE_SHAFT_CHANCE = 0.09F;
-	private static final float FOREST_SHAFT_CHANCE = 0.10F;
-	private static final float JUNGLE_SHAFT_CHANCE = 0.14F;
+	private static final float CAVE_SHAFT_CHANCE = 0.011F;
+	private static final float FOREST_SHAFT_CHANCE = 0.012F;
+	private static final float JUNGLE_SHAFT_CHANCE = 0.018F;
 
 	/** Sky light at or below which a position counts as enclosed. */
 	private static final int ENCLOSED_SKY_LIGHT = 3;
@@ -214,7 +216,7 @@ public final class AmbientParticleController {
 			double offsetZ = (random.nextDouble() * 2.0 - 1.0) * radius;
 
 			level.addParticle(
-					ParticleTypes.WHITE_ASH,
+					ModParticles.DUST_MOTE,
 					originX + leanX * along + offsetX,
 					originY - along,
 					originZ + leanZ * along + offsetZ,
