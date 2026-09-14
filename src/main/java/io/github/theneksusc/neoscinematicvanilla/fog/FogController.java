@@ -1,7 +1,8 @@
 package io.github.theneksusc.neoscinematicvanilla.fog;
 
 import io.github.theneksusc.neoscinematicvanilla.NeosCinematicVanillaClient;
-import io.github.theneksusc.neoscinematicvanilla.config.FogConfig;
+import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
+import io.github.theneksusc.neoscinematicvanilla.config.FogSettings;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -110,8 +111,8 @@ public final class FogController {
 			float renderDistance,
 			DeltaTracker deltaTracker) {
 
-		FogConfig.reloadIfChanged();
-		FogConfig config = FogConfig.get();
+		CinematicConfig.reloadIfChanged();
+		FogSettings config = CinematicConfig.fog();
 
 		if (!config.enabled || config.intensity <= 0.0F) {
 			return;
@@ -174,7 +175,7 @@ public final class FogController {
 	}
 
 	/** Combines the environmental signals into a single density between 0 and 1. */
-	private static float targetDensity(Camera camera, ClientLevel level, float partialTicks, FogConfig config) {
+	private static float targetDensity(Camera camera, ClientLevel level, float partialTicks, FogSettings config) {
 		float y = (float) camera.position().y;
 		BlockPos pos = camera.blockPosition();
 
@@ -203,7 +204,7 @@ public final class FogController {
 	}
 
 	/** Eases density towards its target so that crossing a cave mouth does not snap. */
-	private static void smoothTowards(float target, DeltaTracker deltaTracker, FogConfig config) {
+	private static void smoothTowards(float target, DeltaTracker deltaTracker, FogSettings config) {
 		float rate = Mth.clamp(config.transitionSpeed * deltaTracker.getGameTimeDeltaTicks(), 0.0F, 1.0F);
 		smoothedDensity += (target - smoothedDensity) * rate;
 	}

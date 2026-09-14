@@ -1,6 +1,6 @@
 package io.github.theneksusc.neoscinematicvanilla;
 
-import io.github.theneksusc.neoscinematicvanilla.config.FogConfig;
+import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
 import net.fabricmc.api.ClientModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,7 @@ public class NeosCinematicVanillaClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		FogConfig.load();
+		CinematicConfig.load();
 		LOGGER.info("Neo's Cinematic Vanilla initialised");
 	}
 }
