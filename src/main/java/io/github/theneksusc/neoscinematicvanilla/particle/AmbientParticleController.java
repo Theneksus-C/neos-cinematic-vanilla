@@ -197,7 +197,15 @@ public final class AmbientParticleController {
 			double radius,
 			double maxLean) {
 
-		int count = minMotes + random.nextInt(maxMotes - minMotes + 1);
+		// Shape and size come from the baseline for this source, scaled by the
+		// user's multipliers, so taste is expressed without needing to know the
+		// tuned numbers underneath.
+		int baseCount = minMotes + random.nextInt(maxMotes - minMotes + 1);
+		int count = Math.max(1, Math.round(baseCount * Math.max(0.0F, config.shaftDensity)));
+
+		length *= Math.max(0.0, config.shaftLength);
+		radius *= Math.max(0.0, config.shaftRadius);
+		maxLean *= Math.max(0.0, config.shaftLean);
 
 		// One lean per shaft, so every mote in it follows the same angle.
 		double leanX = (random.nextDouble() * 2.0 - 1.0) * maxLean;

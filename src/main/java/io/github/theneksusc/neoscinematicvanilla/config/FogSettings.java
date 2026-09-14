@@ -44,6 +44,21 @@ public class FogSettings {
 	 */
 	public float transitionSpeed = 0.08F;
 
+	/** Elevation at or below which altitude haze is at full strength. */
+	public float hazeFullBelowY = 64.0F;
+
+	/** Elevation at or above which altitude haze is absent entirely. */
+	public float hazeNoneAboveY = 140.0F;
+
+	/**
+	 * Elevation at or above which an enclosed space counts as a building rather
+	 * than a cave, and so is left clear. Raising this fogs cellars and interiors.
+	 */
+	public float caveNoneAboveY = 60.0F;
+
+	/** Elevation at or below which an enclosed space counts fully as underground. */
+	public float caveFullBelowY = 20.0F;
+
 	/**
 	 * Logs the resulting fog band and the fog fraction at 64, 128, and 256
 	 * blocks, roughly twice per second. For tuning, and for telling apart an

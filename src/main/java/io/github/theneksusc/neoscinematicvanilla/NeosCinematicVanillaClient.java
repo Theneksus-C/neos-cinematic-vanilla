@@ -33,7 +33,7 @@ public class NeosCinematicVanillaClient implements ClientModInitializer {
 		// The type must exist before anything can spawn it, and the provider
 		// must be registered before the particle engine loads its sprites.
 		ModParticles.register();
-		ParticleProviderRegistry.getInstance().register(ModParticles.DUST_MOTE, DustMoteParticle.SunlitProvider::new);
+		ParticleProviderRegistry.getInstance().register(ModParticles.DUST_MOTE, DustMoteParticle.Provider::new);
 
 		LOGGER.info("Neo's Cinematic Vanilla initialised");
 	}

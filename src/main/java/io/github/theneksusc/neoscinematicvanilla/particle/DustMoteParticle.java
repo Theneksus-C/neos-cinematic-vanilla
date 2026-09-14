@@ -1,5 +1,7 @@
 package io.github.theneksusc.neoscinematicvanilla.particle;
 
+import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
+import io.github.theneksusc.neoscinematicvanilla.config.ParticleSettings;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
@@ -7,6 +9,7 @@ import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 
 /**
@@ -21,9 +24,9 @@ import net.minecraft.util.RandomSource;
  *       velocity set at spawn never changes. Vanilla ash applies a friction of
  *       0.96 to a velocity it generates itself, which reads as a mote being
  *       flicked and then slowing to a stop.
- *   <li><b>Fading.</b> Opacity ramps up over the first {@link #FADE_TICKS} and
- *       back down over the last, so motes are never seen to appear or vanish.
- *       No vanilla particle fades out.
+ *   <li><b>Fading.</b> Opacity ramps up at the start of life and back down at
+ *       the end, so motes are never seen to appear or vanish. No vanilla
+ *       particle fades out.
  *   <li><b>Colour.</b> Set directly on the red, green, and blue fields, which
  *       the tintable vanilla particle only allows at the cost of a lifetime
  *       divided by its size.
@@ -31,33 +34,38 @@ import net.minecraft.util.RandomSource;
  *
  * <p>Rendering uses the translucent layer. On the opaque layer the alpha value
  * would be ignored and the fade would do nothing.
+ *
+ * <p>Every appearance value is read from config at spawn time rather than
+ * captured as a constant, so an edited config affects motes created from that
+ * moment on. Motes already in flight keep the values they were born with.
  */
 public class DustMoteParticle extends SingleQuadParticle {
 
-	/** Length of the fade at each end of the particle's life, in ticks. */
-	private static final int FADE_TICKS = 30;
-
-	/** Opacity once fully faded in, before the per particle variation below. */
-	private static final float BASE_ALPHA = 0.55F;
-	private static final float ALPHA_VARIATION = 0.30F;
-
-	/** Lifetime range in ticks. At 20 ticks per second this is 12 to 24 seconds. */
-	private static final int MIN_LIFETIME = 240;
-	private static final int LIFETIME_VARIATION = 240;
-
-	/** Rendered size range. Deliberately small, so motes read as dust rather than debris. */
-	private static final float MIN_SIZE = 0.045F;
+	/** Base rendered size, before the configured multiplier and random variation. */
+	private static final float BASE_SIZE = 0.045F;
 	private static final float SIZE_VARIATION = 0.035F;
 
-	/** Sideways drift, constant for the life of the mote. */
-	private static final double HORIZONTAL_DRIFT = 0.0022;
+	/** Fraction by which lifetime varies either side of the configured value. */
+	private static final float LIFETIME_VARIATION = 0.35F;
 
-	/** Downward drift. Slow enough that motes hang rather than fall. */
-	private static final double MIN_FALL_SPEED = 0.0012;
-	private static final double FALL_SPEED_VARIATION = 0.0011;
+	/** Fraction by which opacity varies either side of the configured value. */
+	private static final float OPACITY_VARIATION = 0.25F;
+
+	/** Base sideways drift per tick, before the configured multiplier. */
+	private static final double BASE_HORIZONTAL_DRIFT = 0.0022;
+
+	/** Base downward drift per tick, before the configured multiplier. */
+	private static final double BASE_MIN_FALL_SPEED = 0.0012;
+	private static final double BASE_FALL_SPEED_VARIATION = 0.0011;
+
+	/** Shortest fade that still reads as a fade rather than a pop, in ticks. */
+	private static final int MIN_FADE_TICKS = 1;
 
 	/** Opacity this mote reaches at full fade in. */
 	private final float peakAlpha;
+
+	/** Length of this mote's fade at each end of its life, in ticks. */
+	private final int fadeTicks;
 
 	protected DustMoteParticle(
 			ClientLevel level,
@@ -66,15 +74,21 @@ public class DustMoteParticle extends SingleQuadParticle {
 			double z,
 			TextureAtlasSprite sprite,
 			RandomSource random,
-			float red,
-			float green,
-			float blue) {
+			ParticleSettings config) {
 
 		super(level, x, y, z, sprite);
 
 		this.setSize(0.01F, 0.01F);
-		this.quadSize = MIN_SIZE + random.nextFloat() * SIZE_VARIATION;
-		this.lifetime = MIN_LIFETIME + random.nextInt(LIFETIME_VARIATION);
+		this.quadSize = (BASE_SIZE + random.nextFloat() * SIZE_VARIATION) * Math.max(0.0F, config.moteSize);
+
+		int configuredLifetime = Math.max(1, Math.round(config.moteLifetimeSeconds * 20.0F));
+		float lifetimeJitter = 1.0F + (random.nextFloat() * 2.0F - 1.0F) * LIFETIME_VARIATION;
+		this.lifetime = Math.max(1, Math.round(configuredLifetime * lifetimeJitter));
+
+		// Fade cannot exceed half the lifetime, or the two ends would overlap
+		// and the mote would never reach full opacity.
+		int configuredFade = Math.round(config.moteFadeSeconds * 20.0F);
+		this.fadeTicks = Mth.clamp(configuredFade, MIN_FADE_TICKS, Math.max(MIN_FADE_TICKS, this.lifetime / 2));
 
 		// Motes pass through blocks. Collision on something this small produces
 		// visible sticking against surfaces rather than anything useful.
@@ -84,15 +98,18 @@ public class DustMoteParticle extends SingleQuadParticle {
 		this.friction = 1.0F;
 		this.gravity = 0.0F;
 
-		this.xd = (random.nextDouble() - 0.5) * HORIZONTAL_DRIFT;
-		this.yd = -(MIN_FALL_SPEED + random.nextDouble() * FALL_SPEED_VARIATION);
-		this.zd = (random.nextDouble() - 0.5) * HORIZONTAL_DRIFT;
+		double drift = Math.max(0.0F, config.moteDriftSpeed);
+		this.xd = (random.nextDouble() - 0.5) * BASE_HORIZONTAL_DRIFT * drift;
+		this.yd = -(BASE_MIN_FALL_SPEED + random.nextDouble() * BASE_FALL_SPEED_VARIATION) * drift;
+		this.zd = (random.nextDouble() - 0.5) * BASE_HORIZONTAL_DRIFT * drift;
 
-		this.rCol = red;
-		this.gCol = green;
-		this.bCol = blue;
+		int rgb = config.moteColorRgb();
+		this.rCol = ((rgb >> 16) & 0xFF) / 255.0F;
+		this.gCol = ((rgb >> 8) & 0xFF) / 255.0F;
+		this.bCol = (rgb & 0xFF) / 255.0F;
 
-		this.peakAlpha = BASE_ALPHA + random.nextFloat() * ALPHA_VARIATION;
+		float opacityJitter = 1.0F + (random.nextFloat() * 2.0F - 1.0F) * OPACITY_VARIATION;
+		this.peakAlpha = Mth.clamp(config.moteOpacity * opacityJitter, 0.0F, 1.0F);
 
 		// Starts invisible so the first frame is the beginning of the fade in
 		// rather than a mote appearing at full strength.
@@ -112,14 +129,14 @@ public class DustMoteParticle extends SingleQuadParticle {
 
 	/** Ramps opacity up at the start of life and back down at the end. */
 	private float alphaForAge() {
-		if (this.age < FADE_TICKS) {
-			return this.peakAlpha * (this.age / (float) FADE_TICKS);
+		if (this.age < this.fadeTicks) {
+			return this.peakAlpha * (this.age / (float) this.fadeTicks);
 		}
 
 		int remaining = this.lifetime - this.age;
 
-		if (remaining < FADE_TICKS) {
-			return this.peakAlpha * (remaining / (float) FADE_TICKS);
+		if (remaining < this.fadeTicks) {
+			return this.peakAlpha * (remaining / (float) this.fadeTicks);
 		}
 
 		return this.peakAlpha;
@@ -130,22 +147,12 @@ public class DustMoteParticle extends SingleQuadParticle {
 		return SingleQuadParticle.Layer.TRANSLUCENT;
 	}
 
-	/**
-	 * Creates motes in a warm yellow, suggesting dust catching sunlight.
-	 *
-	 * <p>Colour is fixed in the provider rather than carried on the particle
-	 * options, which keeps the particle type simple. A second provider can be
-	 * added later if a source needs a different tint.
-	 */
-	public static class SunlitProvider implements ParticleProvider<SimpleParticleType> {
-
-		private static final float RED = 1.00F;
-		private static final float GREEN = 0.90F;
-		private static final float BLUE = 0.55F;
+	/** Creates motes using whatever the particle settings currently say. */
+	public static class Provider implements ParticleProvider<SimpleParticleType> {
 
 		private final SpriteSet sprites;
 
-		public SunlitProvider(SpriteSet sprites) {
+		public Provider(SpriteSet sprites) {
 			this.sprites = sprites;
 		}
 
@@ -161,7 +168,8 @@ public class DustMoteParticle extends SingleQuadParticle {
 				double zAux,
 				RandomSource random) {
 
-			return new DustMoteParticle(level, x, y, z, this.sprites.get(random), random, RED, GREEN, BLUE);
+			return new DustMoteParticle(
+					level, x, y, z, this.sprites.get(random), random, CinematicConfig.particles());
 		}
 	}
 }

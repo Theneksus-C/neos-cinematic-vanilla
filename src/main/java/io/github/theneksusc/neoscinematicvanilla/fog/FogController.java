@@ -39,18 +39,6 @@ public final class FogController {
 	 */
 	private static final float VANILLA_DEFAULT_FOG_END = 1024.0F;
 
-	/** Elevation at or below which altitude haze reaches full strength. */
-	private static final float HAZE_FLOOR_Y = 64.0F;
-
-	/** Elevation at or above which altitude haze is fully absent. */
-	private static final float HAZE_CEILING_Y = 140.0F;
-
-	/** Elevation at or above which enclosed spaces count as buildings rather than caves. */
-	private static final float CAVE_CEILING_Y = 60.0F;
-
-	/** Elevation at or below which enclosure counts fully as being underground. */
-	private static final float CAVE_FLOOR_Y = 20.0F;
-
 	/**
 	 * Peak density contributed by low elevation alone. Tuned down from 0.18
 	 * after play testing, which read as slightly too heavy at ground level.
@@ -186,10 +174,10 @@ public final class FogController {
 
 		// Depth gates the cave term so that enclosed spaces at surface level,
 		// which are almost always buildings, do not fill with fog.
-		float depth = Mth.clamp((CAVE_CEILING_Y - y) / (CAVE_CEILING_Y - CAVE_FLOOR_Y), 0.0F, 1.0F);
+		float depth = rampDown(y, config.caveFullBelowY, config.caveNoneAboveY);
 		float cave = enclosure * enclosure * depth * MAX_CAVE_DENSITY * config.caveInfluence;
 
-		float altitudeFactor = Mth.clamp((HAZE_CEILING_Y - y) / (HAZE_CEILING_Y - HAZE_FLOOR_Y), 0.0F, 1.0F);
+		float altitudeFactor = rampDown(y, config.hazeFullBelowY, config.hazeNoneAboveY);
 		float altitude = altitudeFactor * MAX_ALTITUDE_DENSITY * config.altitudeInfluence;
 
 		float rain = level.getRainLevel(partialTicks);
@@ -201,6 +189,21 @@ public final class FogController {
 		float combined = Math.max(cave, altitude + weather);
 
 		return Mth.clamp(combined * config.intensity, 0.0F, 1.0F);
+	}
+
+	/**
+	 * Returns 1 at or below {@code full}, 0 at or above {@code none}, and a
+	 * linear ramp between them. Tolerates the two bounds being equal or
+	 * inverted, which a user editing the config can easily produce.
+	 */
+	private static float rampDown(float value, float full, float none) {
+		float span = none - full;
+
+		if (span <= 0.0F) {
+			return value <= full ? 1.0F : 0.0F;
+		}
+
+		return Mth.clamp((none - value) / span, 0.0F, 1.0F);
 	}
 
 	/** Eases density towards its target so that crossing a cave mouth does not snap. */
