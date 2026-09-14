@@ -47,12 +47,18 @@ public enum ConfigPresets {
 	public void apply() {
 		FogSettings fog = CinematicConfig.fog();
 		ParticleSettings particles = CinematicConfig.particles();
+		LeafSettings leaves = CinematicConfig.leaves();
 
 		fog.enabled = this.fogIntensity > 0.0F;
 		fog.intensity = this.fogIntensity;
 
 		particles.enabled = this.particleDensity > 0.0F;
 		particles.density = this.particleDensity;
+
+		// Leaves track particle density, since both are airborne clutter and a
+		// player who wants less of one almost always wants less of the other.
+		leaves.enabled = this.particleDensity > 0.0F;
+		leaves.frequency = this.particleDensity;
 
 		// Per source weights return to even, so a preset is a predictable
 		// starting point rather than a blend with whatever was set before.

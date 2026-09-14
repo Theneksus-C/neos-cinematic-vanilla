@@ -24,6 +24,7 @@ public class CinematicConfig {
 
 	public FogSettings fog = new FogSettings();
 	public ParticleSettings particles = new ParticleSettings();
+	public LeafSettings leaves = new LeafSettings();
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final String FILE_NAME = "neoscinematicvanilla.json";
@@ -46,6 +47,10 @@ public class CinematicConfig {
 
 	public static ParticleSettings particles() {
 		return instance.particles;
+	}
+
+	public static LeafSettings leaves() {
+		return instance.leaves;
 	}
 
 	/** Reads the config from disk, writing a default file first if none exists. */
@@ -72,6 +77,10 @@ public class CinematicConfig {
 					parsed.particles = new ParticleSettings();
 				}
 
+				if (parsed.leaves == null) {
+					parsed.leaves = new LeafSettings();
+				}
+
 				instance = parsed;
 			}
 
@@ -91,6 +100,7 @@ public class CinematicConfig {
 	public static void resetToDefaults() {
 		instance.fog = new FogSettings();
 		instance.particles = new ParticleSettings();
+		instance.leaves = new LeafSettings();
 	}
 
 	/** Writes current values to disk. */

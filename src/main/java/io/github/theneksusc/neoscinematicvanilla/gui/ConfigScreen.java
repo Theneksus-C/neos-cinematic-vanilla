@@ -3,6 +3,7 @@ package io.github.theneksusc.neoscinematicvanilla.gui;
 import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
 import io.github.theneksusc.neoscinematicvanilla.config.ConfigPresets;
 import io.github.theneksusc.neoscinematicvanilla.config.FogSettings;
+import io.github.theneksusc.neoscinematicvanilla.config.LeafSettings;
 import io.github.theneksusc.neoscinematicvanilla.config.ParticleSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
@@ -65,6 +66,7 @@ public class ConfigScreen extends OptionsSubScreen {
 		addParticleSection(particles);
 		addMoteAppearanceSection(particles);
 		addShaftSection(particles);
+		addLeafSection(CinematicConfig.leaves());
 		addDebugSection(fog, particles);
 	}
 
@@ -179,6 +181,18 @@ public class ConfigScreen extends OptionsSubScreen {
 		this.list.addSmall(
 				multiplier("particles.shaft_radius", particles.shaftRadius, v -> particles.shaftRadius = v),
 				multiplier("particles.shaft_lean", particles.shaftLean, v -> particles.shaftLean = v));
+	}
+
+	/**
+	 * Leaves have only two settings because vanilla already handles the effect
+	 * itself. This section scales how often it happens, nothing more.
+	 */
+	private void addLeafSection(LeafSettings leaves) {
+		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.leaves"));
+
+		this.list.addSmall(
+				toggle("leaves.enabled", leaves.enabled, v -> leaves.enabled = v),
+				multiplier("leaves.frequency", leaves.frequency, v -> leaves.frequency = v));
 	}
 
 	private void addDebugSection(FogSettings fog, ParticleSettings particles) {

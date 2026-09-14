@@ -8,6 +8,7 @@
   "neoscinematicvanilla.section.particles": "Ambient Particles",
   "neoscinematicvanilla.section.mote_appearance": "Mote Appearance",
   "neoscinematicvanilla.section.shafts": "Shaft Shape",
+  "neoscinematicvanilla.section.leaves": "Falling Leaves",
   "neoscinematicvanilla.section.debug": "Debug",
 
   "neoscinematicvanilla.preset.off": "Off",
@@ -49,5 +50,8 @@
   "neoscinematicvanilla.option.particles.shaft_length": "Shaft Length",
   "neoscinematicvanilla.option.particles.shaft_radius": "Shaft Width",
   "neoscinematicvanilla.option.particles.shaft_lean": "Shaft Lean",
-  "neoscinematicvanilla.option.particles.debug": "Particle Debug Logging"
+  "neoscinematicvanilla.option.particles.debug": "Particle Debug Logging",
+
+  "neoscinematicvanilla.option.leaves.enabled": "Falling Leaves",
+  "neoscinematicvanilla.option.leaves.frequency": "Leaf Frequency"
 }
