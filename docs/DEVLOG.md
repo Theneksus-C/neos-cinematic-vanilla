@@ -102,3 +102,23 @@ refs. No new repository was needed.
 **Generalisation:** verify a push through the API, not the web UI, when a page
 element looks stale. After any `filter-branch`, delete the backup refs or the
 old history stays reachable locally and looks like the rewrite failed.
+
+---
+
+## 2026-09-14: Camera.getPosition() does not exist in Mojang mappings
+
+**Symptom:** `cannot find symbol: method getPosition(), location: variable
+camera of type Camera` when compiling the first fog mixin.
+
+**Cause:** Mojang's official names frequently omit the `get` prefix that Yarn
+mappings used. The accessor is `Camera.position()`, not `getPosition()`. Yarn
+called it `getPos()`. Since Yarn was deprecated at 26.1, every pre-2026
+tutorial and every mod still targeting 1.21 or earlier uses names that no
+longer resolve.
+
+**Resolution:** used `camera.position()`.
+
+**Generalisation:** do not guess Minecraft method names from memory or from
+older mods. Run `javap -classpath <minecraft-merged.jar> <fully.qualified.Class>`
+against the Loom cache at `~/.gradle/caches/fabric-loom/26.2/` to read the real
+signatures. Full decompiled sources are available through `gradlew genSources`.

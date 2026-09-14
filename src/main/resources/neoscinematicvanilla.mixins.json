@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "io.github.theneksusc.neoscinematicvanilla.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"AtmosphericFogEnvironmentMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
