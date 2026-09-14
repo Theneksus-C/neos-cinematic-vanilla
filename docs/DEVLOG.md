@@ -225,3 +225,49 @@ everything from scratch. Where a screen accumulates into a field that outlives
 keeps across `init` before calling it twice. The visible symptom was opacity,
 which points nowhere near the actual cause, so the lead was the fact that
 repeated presses compounded it.
+
+---
+
+## 2026-09-15: Settings reverted when the screen closed
+
+**Symptom:** a value changed in the settings screen took effect immediately, so
+leaves genuinely stopped at a frequency of 0, but pressing Done reverted it.
+The config file on disk held the values from the last preset press rather than
+the edit.
+
+**Cause:** two faults compounding.
+
+`load()` replaced the whole config object:
+
+```java
+instance = parsed;
+```
+
+which swaps the fog, particle, and leaf section objects for new ones. The
+screen's widgets had captured references to the previous objects in their
+setter lambdas, so after any reload they were writing into objects no longer
+attached to anything. The change appeared to work because the widget's own
+displayed value updated, and the effect appeared to work for as long as the
+old object was still the live one.
+
+Reloads happen on a one second timer driven from the fog controller, which
+keeps running while the screen is open because the world renders behind it. A
+reload during editing therefore silently detached every widget, and the
+subsequent save on close wrote the reloaded values.
+
+**Resolution:** setters now resolve the settings object at call time rather
+than capturing it:
+
+```java
+v -> CinematicConfig.fog().intensity = v
+```
+
+so object replacement cannot orphan them. Separately, reloading is suspended
+while the settings screen is open, since a person editing in game is a more
+authoritative source than the file.
+
+**Generalisation:** any object handed to a UI widget becomes a reference that
+outlives the call. Config systems that reload by replacing their root will
+break every such reference, and the breakage is silent because writes still
+succeed, just into an object nothing reads. Either mutate in place on reload,
+or resolve through an accessor at the point of use.

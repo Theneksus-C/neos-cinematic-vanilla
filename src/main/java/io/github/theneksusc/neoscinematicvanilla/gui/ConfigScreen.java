@@ -56,6 +56,19 @@ public class ConfigScreen extends OptionsSubScreen {
 		super(lastScreen, Minecraft.getInstance().options, Component.translatable("neoscinematicvanilla.config.title"));
 	}
 
+	/**
+	 * Holds off config reloads while this screen is open.
+	 *
+	 * <p>A reload replaces the section objects and would discard edits made
+	 * here. Editing in game takes precedence over the file until the screen
+	 * closes, at which point the file is written from what was edited.
+	 */
+	@Override
+	protected void init() {
+		CinematicConfig.setReloadSuspended(true);
+		super.init();
+	}
+
 	@Override
 	protected void addOptions() {
 		FogSettings fog = CinematicConfig.fog();
@@ -117,46 +130,46 @@ public class ConfigScreen extends OptionsSubScreen {
 		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.fog"));
 
 		this.list.addSmall(
-				toggle("fog.enabled", fog.enabled, v -> fog.enabled = v),
-				multiplier("fog.intensity", fog.intensity, v -> fog.intensity = v));
+				toggle("fog.enabled", fog.enabled, v -> CinematicConfig.fog().enabled = v),
+				multiplier("fog.intensity", fog.intensity, v -> CinematicConfig.fog().intensity = v));
 
 		this.list.addSmall(
-				multiplier("fog.altitude", fog.altitudeInfluence, v -> fog.altitudeInfluence = v),
-				multiplier("fog.cave", fog.caveInfluence, v -> fog.caveInfluence = v));
+				multiplier("fog.altitude", fog.altitudeInfluence, v -> CinematicConfig.fog().altitudeInfluence = v),
+				multiplier("fog.cave", fog.caveInfluence, v -> CinematicConfig.fog().caveInfluence = v));
 
 		this.list.addSmall(
-				multiplier("fog.weather", fog.weatherInfluence, v -> fog.weatherInfluence = v),
-				multiplier("fog.end_distance", fog.endDistance, v -> fog.endDistance = v));
+				multiplier("fog.weather", fog.weatherInfluence, v -> CinematicConfig.fog().weatherInfluence = v),
+				multiplier("fog.end_distance", fog.endDistance, v -> CinematicConfig.fog().endDistance = v));
 
 		this.list.addSmall(
-				multiplier("fog.start_distance", fog.startDistance, v -> fog.startDistance = v),
-				ratio("fog.transition_speed", fog.transitionSpeed, v -> fog.transitionSpeed = v));
+				multiplier("fog.start_distance", fog.startDistance, v -> CinematicConfig.fog().startDistance = v),
+				ratio("fog.transition_speed", fog.transitionSpeed, v -> CinematicConfig.fog().transitionSpeed = v));
 
 		this.list.addSmall(
-				elevation("fog.haze_full_below", (int) fog.hazeFullBelowY, v -> fog.hazeFullBelowY = v),
-				elevation("fog.haze_none_above", (int) fog.hazeNoneAboveY, v -> fog.hazeNoneAboveY = v));
+				elevation("fog.haze_full_below", (int) fog.hazeFullBelowY, v -> CinematicConfig.fog().hazeFullBelowY = v),
+				elevation("fog.haze_none_above", (int) fog.hazeNoneAboveY, v -> CinematicConfig.fog().hazeNoneAboveY = v));
 
 		this.list.addSmall(
-				elevation("fog.cave_full_below", (int) fog.caveFullBelowY, v -> fog.caveFullBelowY = v),
-				elevation("fog.cave_none_above", (int) fog.caveNoneAboveY, v -> fog.caveNoneAboveY = v));
+				elevation("fog.cave_full_below", (int) fog.caveFullBelowY, v -> CinematicConfig.fog().caveFullBelowY = v),
+				elevation("fog.cave_none_above", (int) fog.caveNoneAboveY, v -> CinematicConfig.fog().caveNoneAboveY = v));
 
 		this.list.addBig(toggle("fog.override_dimension", fog.overrideCustomDimensionFog,
-				v -> fog.overrideCustomDimensionFog = v));
+				v -> CinematicConfig.fog().overrideCustomDimensionFog = v));
 	}
 
 	private void addParticleSection(ParticleSettings particles) {
 		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.particles"));
 
 		this.list.addSmall(
-				toggle("particles.enabled", particles.enabled, v -> particles.enabled = v),
-				multiplier("particles.density", particles.density, v -> particles.density = v));
+				toggle("particles.enabled", particles.enabled, v -> CinematicConfig.particles().enabled = v),
+				multiplier("particles.density", particles.density, v -> CinematicConfig.particles().density = v));
 
 		this.list.addSmall(
-				multiplier("particles.cave", particles.caveDustDensity, v -> particles.caveDustDensity = v),
-				multiplier("particles.forest", particles.forestMoteDensity, v -> particles.forestMoteDensity = v));
+				multiplier("particles.cave", particles.caveDustDensity, v -> CinematicConfig.particles().caveDustDensity = v),
+				multiplier("particles.forest", particles.forestMoteDensity, v -> CinematicConfig.particles().forestMoteDensity = v));
 
 		this.list.addBig(multiplier("particles.jungle", particles.jungleRayDensity,
-				v -> particles.jungleRayDensity = v));
+				v -> CinematicConfig.particles().jungleRayDensity = v));
 	}
 
 	private void addMoteAppearanceSection(ParticleSettings particles) {
@@ -170,29 +183,29 @@ public class ConfigScreen extends OptionsSubScreen {
 
 		this.list.addSmall(
 				colorChannel("particles.color_blue", 0, rgb & 0xFF),
-				ratio("particles.opacity", particles.moteOpacity, v -> particles.moteOpacity = v));
+				ratio("particles.opacity", particles.moteOpacity, v -> CinematicConfig.particles().moteOpacity = v));
 
 		this.list.addSmall(
-				multiplier("particles.mote_size", particles.moteSize, v -> particles.moteSize = v),
-				multiplier("particles.drift", particles.moteDriftSpeed, v -> particles.moteDriftSpeed = v));
+				multiplier("particles.mote_size", particles.moteSize, v -> CinematicConfig.particles().moteSize = v),
+				multiplier("particles.drift", particles.moteDriftSpeed, v -> CinematicConfig.particles().moteDriftSpeed = v));
 
 		this.list.addSmall(
 				seconds("particles.lifetime", 1, 60, Math.round(particles.moteLifetimeSeconds),
-						v -> particles.moteLifetimeSeconds = v),
+						v -> CinematicConfig.particles().moteLifetimeSeconds = v),
 				seconds("particles.fade", 0, 10, Math.round(particles.moteFadeSeconds),
-						v -> particles.moteFadeSeconds = v));
+						v -> CinematicConfig.particles().moteFadeSeconds = v));
 	}
 
 	private void addShaftSection(ParticleSettings particles) {
 		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.shafts"));
 
 		this.list.addSmall(
-				multiplier("particles.shaft_density", particles.shaftDensity, v -> particles.shaftDensity = v),
-				multiplier("particles.shaft_length", particles.shaftLength, v -> particles.shaftLength = v));
+				multiplier("particles.shaft_density", particles.shaftDensity, v -> CinematicConfig.particles().shaftDensity = v),
+				multiplier("particles.shaft_length", particles.shaftLength, v -> CinematicConfig.particles().shaftLength = v));
 
 		this.list.addSmall(
-				multiplier("particles.shaft_radius", particles.shaftRadius, v -> particles.shaftRadius = v),
-				multiplier("particles.shaft_lean", particles.shaftLean, v -> particles.shaftLean = v));
+				multiplier("particles.shaft_radius", particles.shaftRadius, v -> CinematicConfig.particles().shaftRadius = v),
+				multiplier("particles.shaft_lean", particles.shaftLean, v -> CinematicConfig.particles().shaftLean = v));
 	}
 
 	/**
@@ -203,16 +216,16 @@ public class ConfigScreen extends OptionsSubScreen {
 		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.leaves"));
 
 		this.list.addSmall(
-				toggle("leaves.enabled", leaves.enabled, v -> leaves.enabled = v),
-				multiplier("leaves.frequency", leaves.frequency, v -> leaves.frequency = v));
+				toggle("leaves.enabled", leaves.enabled, v -> CinematicConfig.leaves().enabled = v),
+				multiplier("leaves.frequency", leaves.frequency, v -> CinematicConfig.leaves().frequency = v));
 	}
 
 	private void addDebugSection(FogSettings fog, ParticleSettings particles) {
 		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.debug"));
 
 		this.list.addSmall(
-				toggle("fog.debug", fog.debugLogging, v -> fog.debugLogging = v),
-				toggle("particles.debug", particles.debugLogging, v -> particles.debugLogging = v));
+				toggle("fog.debug", fog.debugLogging, v -> CinematicConfig.fog().debugLogging = v),
+				toggle("particles.debug", particles.debugLogging, v -> CinematicConfig.particles().debugLogging = v));
 	}
 
 	/** Adds a reset button beside vanilla's done button. */
@@ -240,6 +253,11 @@ public class ConfigScreen extends OptionsSubScreen {
 	@Override
 	public void removed() {
 		CinematicConfig.save();
+
+		// Reopening constructs a new screen, whose init suspends again before
+		// anything can reload, so lifting it here is safe.
+		CinematicConfig.setReloadSuspended(false);
+
 		super.removed();
 	}
 

@@ -37,6 +37,20 @@ public class CinematicConfig {
 	private static long lastModified = -1L;
 	private static long lastCheckMillis;
 
+	/**
+	 * Suppresses reloading while the settings screen is open.
+	 *
+	 * <p>A reload replaces the section objects, and a screen being edited at
+	 * that moment would have its pending changes overwritten by whatever is on
+	 * disk. The person editing in game is the more authoritative source, so the
+	 * file is left alone until they finish.
+	 */
+	private static boolean reloadSuspended;
+
+	public static void setReloadSuspended(boolean suspended) {
+		reloadSuspended = suspended;
+	}
+
 	public static CinematicConfig get() {
 		return instance;
 	}
@@ -123,6 +137,10 @@ public class CinematicConfig {
 	 * every frame costs one clock read in the common case.
 	 */
 	public static void reloadIfChanged() {
+		if (reloadSuspended) {
+			return;
+		}
+
 		long now = System.currentTimeMillis();
 
 		if (now - lastCheckMillis < CHECK_INTERVAL_MILLIS) {
