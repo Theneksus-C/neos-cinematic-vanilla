@@ -70,8 +70,9 @@ Launches Minecraft with the mod loaded. The game directory is `run/`.
 
 ## Status
 
-Dynamic fog implemented and tuned. Altitude, cave depth, and weather drive an
-atmospheric fog band, configurable at runtime. Remaining features not started.
+Four of seven features implemented: dynamic fog, ambient particles, falling
+leaf frequency, and a wind model with ambient sound. All settings are
+adjustable in game through a settings screen reached by a key binding.
 
 ## Documentation
 
