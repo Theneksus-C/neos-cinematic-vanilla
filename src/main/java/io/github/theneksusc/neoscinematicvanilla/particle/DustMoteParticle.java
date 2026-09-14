@@ -10,7 +10,7 @@ import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 
@@ -90,7 +90,8 @@ public class DustMoteParticle extends SingleQuadParticle {
 			double z,
 			TextureAtlasSprite sprite,
 			RandomSource random,
-			ParticleSettings config) {
+			ParticleSettings config,
+			ColorParticleOption options) {
 
 		super(level, x, y, z, sprite);
 
@@ -122,10 +123,11 @@ public class DustMoteParticle extends SingleQuadParticle {
 		this.yd = -(BASE_MIN_FALL_SPEED + random.nextDouble() * BASE_FALL_SPEED_VARIATION) * drift;
 		this.zd = this.baseZd;
 
-		int rgb = config.moteColorRgb();
-		this.rCol = ((rgb >> 16) & 0xFF) / 255.0F;
-		this.gCol = ((rgb >> 8) & 0xFF) / 255.0F;
-		this.bCol = (rgb & 0xFF) / 255.0F;
+		// Colour arrives with the spawn rather than from settings, because it
+		// describes the place this mote is in rather than a preference.
+		this.rCol = options.getRed();
+		this.gCol = options.getGreen();
+		this.bCol = options.getBlue();
 
 		float opacityJitter = 1.0F + (random.nextFloat() * 2.0F - 1.0F) * OPACITY_VARIATION;
 		this.peakAlpha = Mth.clamp(config.moteOpacity * opacityJitter, 0.0F, 1.0F);
@@ -192,7 +194,7 @@ public class DustMoteParticle extends SingleQuadParticle {
 	}
 
 	/** Creates motes using whatever the particle settings currently say. */
-	public static class Provider implements ParticleProvider<SimpleParticleType> {
+	public static class Provider implements ParticleProvider<ColorParticleOption> {
 
 		private final SpriteSet sprites;
 
@@ -202,7 +204,7 @@ public class DustMoteParticle extends SingleQuadParticle {
 
 		@Override
 		public Particle createParticle(
-				SimpleParticleType options,
+				ColorParticleOption options,
 				ClientLevel level,
 				double x,
 				double y,
@@ -213,7 +215,7 @@ public class DustMoteParticle extends SingleQuadParticle {
 				RandomSource random) {
 
 			return new DustMoteParticle(
-					level, x, y, z, this.sprites.get(random), random, CinematicConfig.particles());
+					level, x, y, z, this.sprites.get(random), random, CinematicConfig.particles(), options);
 		}
 	}
 }

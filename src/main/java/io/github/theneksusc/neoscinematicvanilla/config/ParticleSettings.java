@@ -4,14 +4,15 @@ package io.github.theneksusc.neoscinematicvanilla.config;
  * Ambient particle settings, serialised as the "particles" object in the config
  * file.
  *
- * <p>Two kinds of value live here. Densities and multipliers default to 1 and
- * scale a tuned baseline, so a user can nudge without needing to know the
- * underlying numbers. Appearance values such as colour and lifetime are
- * absolute, because those are what a person actually wants to state directly.
+ * <p>Densities are multipliers on deliberately low base rates. Base rates
+ * differ per source because the particles they use have very different
+ * lifetimes, and steady state count is spawn rate multiplied by lifetime.
  *
- * <p>Anything that affects how the effect looks belongs here rather than as a
- * constant in the code. Constants are reserved for values that would break the
- * effect if changed, not for matters of taste.
+ * <p>Mote colour is deliberately absent. Colour is decided by the character of
+ * the place, so that a desert reads as dusty and a snowfield as cold, and a
+ * single chosen colour would flatten that straight back out. See
+ * {@code BiomeCharacter} for the palette, and the "biomes" section for how
+ * strongly places are allowed to differ from one another.
  */
 public class ParticleSettings {
 
@@ -24,18 +25,11 @@ public class ParticleSettings {
 	/** Shafts of motes in caves and other deep enclosed spaces. */
 	public float caveDustDensity = 1.0F;
 
-	/** Shafts of motes among the canopy in forest and taiga biomes. */
-	public float forestMoteDensity = 1.0F;
-
-	/** Shafts of motes in jungles, which are denser and narrower than other canopies. */
-	public float jungleRayDensity = 1.0F;
-
 	/**
-	 * Mote colour as a hex string, with or without a leading hash. Defaults to
-	 * a warm yellow suggesting dust catching sunlight. Falls back to that
-	 * default if the value cannot be parsed.
+	 * Motes in open air. Their rate, shape, and colour follow the character of
+	 * the place, so this scales all of them at once rather than one biome.
 	 */
-	public String moteColor = "#FFE68C";
+	public float surfaceMoteDensity = 1.0F;
 
 	/** Opacity a mote reaches once fully faded in, from 0 to 1. */
 	public float moteOpacity = 0.70F;
@@ -49,7 +43,7 @@ public class ParticleSettings {
 	/** Length of the fade at each end of a mote's life, in seconds. */
 	public float moteFadeSeconds = 1.5F;
 
-	/** Scales how fast motes drift. 0 leaves them completely still. */
+	/** Scales how fast motes drift on their own, before wind is applied. */
 	public float moteDriftSpeed = 1.0F;
 
 	/** Scales how far a shaft of motes extends downward. */
@@ -69,34 +63,4 @@ public class ParticleSettings {
 	 * rates can be checked against what they were intended to be.
 	 */
 	public boolean debugLogging = false;
-
-	/** Colour used when {@link #moteColor} cannot be parsed. */
-	private static final int FALLBACK_COLOR = 0xFFE68C;
-
-	/**
-	 * Parses {@link #moteColor} into a packed RGB value.
-	 *
-	 * <p>Parsing happens per particle rather than once at load, which is
-	 * affordable because it runs a few times a second at most, and which means
-	 * an edited config takes effect without any cached value to invalidate.
-	 */
-	public int moteColorRgb() {
-		String value = this.moteColor;
-
-		if (value == null) {
-			return FALLBACK_COLOR;
-		}
-
-		value = value.trim();
-
-		if (value.startsWith("#")) {
-			value = value.substring(1);
-		}
-
-		try {
-			return Integer.parseInt(value, 16) & 0xFFFFFF;
-		} catch (NumberFormatException e) {
-			return FALLBACK_COLOR;
-		}
-	}
 }

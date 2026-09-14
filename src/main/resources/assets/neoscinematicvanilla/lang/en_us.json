@@ -4,6 +4,7 @@
   "key.neoscinematicvanilla.open_config": "Open Cinematic Vanilla settings",
 
   "neoscinematicvanilla.section.presets": "Presets",
+  "neoscinematicvanilla.section.biomes": "Biome Character",
   "neoscinematicvanilla.section.fog": "Dynamic Fog",
   "neoscinematicvanilla.section.particles": "Ambient Particles",
   "neoscinematicvanilla.section.mote_appearance": "Mote Appearance",
@@ -19,6 +20,21 @@
   "neoscinematicvanilla.preset.cinematic": "Cinematic",
 
   "neoscinematicvanilla.button.reset": "Reset to Defaults",
+
+  "neoscinematicvanilla.option.biomes.enabled": "Biome Character",
+  "neoscinematicvanilla.option.biomes.strength": "How Different Places Feel",
+  "neoscinematicvanilla.option.biomes.arid": "Deserts and Badlands",
+  "neoscinematicvanilla.option.biomes.frozen": "Snowy Country",
+  "neoscinematicvanilla.option.biomes.swamp": "Swamps",
+  "neoscinematicvanilla.option.biomes.wooded": "Forests",
+  "neoscinematicvanilla.option.biomes.highland": "Peaks and Highlands",
+
+  "neoscinematicvanilla.biome.temperate": "Temperate",
+  "neoscinematicvanilla.biome.arid": "Arid",
+  "neoscinematicvanilla.biome.frozen": "Frozen",
+  "neoscinematicvanilla.biome.swamp": "Swamp",
+  "neoscinematicvanilla.biome.wooded": "Wooded",
+  "neoscinematicvanilla.biome.highland": "Highland",
 
   "neoscinematicvanilla.option.fog.enabled": "Dynamic Fog",
   "neoscinematicvanilla.option.fog.intensity": "Fog Intensity",
@@ -37,12 +53,8 @@
 
   "neoscinematicvanilla.option.particles.enabled": "Ambient Particles",
   "neoscinematicvanilla.option.particles.density": "Particle Density",
-  "neoscinematicvanilla.option.particles.cave": "Cave Shafts",
-  "neoscinematicvanilla.option.particles.forest": "Forest Shafts",
-  "neoscinematicvanilla.option.particles.jungle": "Jungle Shafts",
-  "neoscinematicvanilla.option.particles.color_red": "Mote Colour: Red",
-  "neoscinematicvanilla.option.particles.color_green": "Mote Colour: Green",
-  "neoscinematicvanilla.option.particles.color_blue": "Mote Colour: Blue",
+  "neoscinematicvanilla.option.particles.cave": "Cave Motes",
+  "neoscinematicvanilla.option.particles.surface": "Surface Motes",
   "neoscinematicvanilla.option.particles.opacity": "Mote Opacity",
   "neoscinematicvanilla.option.particles.mote_size": "Mote Size",
   "neoscinematicvanilla.option.particles.lifetime": "Mote Lifetime",

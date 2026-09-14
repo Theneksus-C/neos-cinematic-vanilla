@@ -3,6 +3,7 @@ package io.github.theneksusc.neoscinematicvanilla.wind;
 import io.github.theneksusc.neoscinematicvanilla.NeosCinematicVanillaClient;
 import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
 import io.github.theneksusc.neoscinematicvanilla.config.WindSettings;
+import io.github.theneksusc.neoscinematicvanilla.world.EnvironmentTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
@@ -238,7 +239,12 @@ public final class WindSystem {
 
 		float gust = 1.0F + gustPhase * GUST_DEPTH * Math.max(0.0F, config.gustiness);
 
-		strength = Mth.clamp(baseStrength * gust * exposure * Math.max(0.0F, config.strength), 0.0F, 1.0F);
+		// Where the player is matters as much as how open it is: a swamp is
+		// still even in a clearing, a peak is exposed even in shelter.
+		float place = EnvironmentTracker.windMultiplier();
+
+		strength = Mth.clamp(
+				baseStrength * gust * exposure * place * Math.max(0.0F, config.strength), 0.0F, 1.0F);
 	}
 
 	/** Current wind strength, 0 to 1. */

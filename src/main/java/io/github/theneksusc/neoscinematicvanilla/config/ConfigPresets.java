@@ -112,7 +112,6 @@ public enum ConfigPresets {
 	 * hand.
 	 */
 	public void apply() {
-		String moteColor = CinematicConfig.particles().moteColor;
 		boolean fogDebug = CinematicConfig.fog().debugLogging;
 		boolean particleDebug = CinematicConfig.particles().debugLogging;
 		boolean overrideDimensionFog = CinematicConfig.fog().overrideCustomDimensionFog;
@@ -123,7 +122,6 @@ public enum ConfigPresets {
 		ParticleSettings particles = CinematicConfig.particles();
 		LeafSettings leaves = CinematicConfig.leaves();
 
-		particles.moteColor = moteColor;
 		fog.debugLogging = fogDebug;
 		particles.debugLogging = particleDebug;
 		fog.overrideCustomDimensionFog = overrideDimensionFog;

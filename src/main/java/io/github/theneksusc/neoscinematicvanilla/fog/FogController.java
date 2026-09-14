@@ -3,6 +3,7 @@ package io.github.theneksusc.neoscinematicvanilla.fog;
 import io.github.theneksusc.neoscinematicvanilla.NeosCinematicVanillaClient;
 import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
 import io.github.theneksusc.neoscinematicvanilla.config.FogSettings;
+import io.github.theneksusc.neoscinematicvanilla.world.EnvironmentTracker;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -184,9 +185,14 @@ public final class FogController {
 		float thunder = level.getThunderLevel(partialTicks);
 		float weather = (rain * MAX_RAIN_DENSITY + thunder * MAX_THUNDER_DENSITY) * config.weatherInfluence;
 
+		// Where the player is thickens or thins the air: swamps hold fog, peaks
+		// shed it. Applied to the surface terms only, since the biome overhead
+		// says nothing about the air inside a cave.
+		float surface = (altitude + weather) * EnvironmentTracker.fogMultiplier();
+
 		// Weather is not visible underground, so the two paths compete for the
 		// result rather than stacking into something denser than either.
-		float combined = Math.max(cave, altitude + weather);
+		float combined = Math.max(cave, surface);
 
 		return Mth.clamp(combined * config.intensity, 0.0F, 1.0F);
 	}

@@ -27,6 +27,7 @@ public class CinematicConfig {
 	public LeafSettings leaves = new LeafSettings();
 	public WindSettings wind = new WindSettings();
 	public GrainSettings grain = new GrainSettings();
+	public BiomeSettings biomes = new BiomeSettings();
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final String FILE_NAME = "neoscinematicvanilla.json";
@@ -77,6 +78,10 @@ public class CinematicConfig {
 		return instance.grain;
 	}
 
+	public static BiomeSettings biomes() {
+		return instance.biomes;
+	}
+
 	/** Reads the config from disk, writing a default file first if none exists. */
 	public static void load() {
 		path = FabricLoader.getInstance().getConfigDir().resolve(FILE_NAME);
@@ -113,6 +118,10 @@ public class CinematicConfig {
 					parsed.grain = new GrainSettings();
 				}
 
+				if (parsed.biomes == null) {
+					parsed.biomes = new BiomeSettings();
+				}
+
 				instance = parsed;
 			}
 
@@ -135,6 +144,7 @@ public class CinematicConfig {
 		instance.leaves = new LeafSettings();
 		instance.wind = new WindSettings();
 		instance.grain = new GrainSettings();
+		instance.biomes = new BiomeSettings();
 	}
 
 	/** Writes current values to disk. */

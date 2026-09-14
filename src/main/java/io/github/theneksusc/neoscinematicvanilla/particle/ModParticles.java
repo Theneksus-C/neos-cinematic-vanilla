@@ -3,7 +3,8 @@ package io.github.theneksusc.neoscinematicvanilla.particle;
 import io.github.theneksusc.neoscinematicvanilla.NeosCinematicVanillaClient;
 import net.fabricmc.fabric.api.particle.v1.FabricParticleTypes;
 import net.minecraft.core.Registry;
-import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.core.particles.ColorParticleOption;
+import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 
@@ -23,8 +24,17 @@ import net.minecraft.resources.Identifier;
  */
 public final class ModParticles {
 
-	/** A slow drifting mote that fades in and out. See {@link DustMoteParticle}. */
-	public static final SimpleParticleType DUST_MOTE = FabricParticleTypes.simple();
+	/**
+	 * A slow drifting mote that fades in and out. See {@link DustMoteParticle}.
+	 *
+	 * <p>Carries a colour per spawn rather than reading one global setting,
+	 * because colour comes from the character of the place: sandy in a desert,
+	 * cold white in snow, warm under a canopy. Vanilla's own
+	 * {@code ColorParticleOption} already holds exactly that, so its codecs are
+	 * reused rather than a bespoke option type being written.
+	 */
+	public static final ParticleType<ColorParticleOption> DUST_MOTE =
+			FabricParticleTypes.complex(ColorParticleOption::codec, ColorParticleOption::streamCodec);
 
 	private ModParticles() {
 	}

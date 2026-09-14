@@ -1,11 +1,13 @@
 package io.github.theneksusc.neoscinematicvanilla.particle;
 
 import io.github.theneksusc.neoscinematicvanilla.NeosCinematicVanillaClient;
+import io.github.theneksusc.neoscinematicvanilla.config.BiomeSettings;
 import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
 import io.github.theneksusc.neoscinematicvanilla.config.ParticleSettings;
+import io.github.theneksusc.neoscinematicvanilla.world.BiomeCharacter;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.tags.BiomeTags;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.BlockState;
@@ -24,6 +26,21 @@ import net.minecraft.world.level.block.state.BlockState;
  * single random comparison that rejects almost every call. Everything past that
  * gate runs a few dozen times a second and can afford a biome lookup.
  *
+ * <h2>Where motes appear, and what colour</h2>
+ *
+ * <p>Surface motes used to appear only under a canopy. They now appear wherever
+ * the place has a character worth showing: dust in arid country, blown snow in
+ * frozen country, shafts under a canopy. Each character sets its own rate,
+ * shape, and colour, which is what stops one biome feeling like the next.
+ *
+ * <p>Classification uses the sampled position rather than the player's, so a
+ * mote spawning across a border takes its own biome's colour. That costs one
+ * biome lookup per surviving candidate, a few dozen a second, not per sample.
+ *
+ * <p>Caves are deliberately exempt. Underground the biome overhead says nothing
+ * about the air, so cave dust keeps one neutral grey rather than turning sandy
+ * because a desert happens to be above.
+ *
  * <h2>Motes fill a volume, not a line</h2>
  *
  * <p>Minecraft cannot draw a beam of light, so a shaft has to be implied by
@@ -31,19 +48,6 @@ import net.minecraft.world.level.block.state.BlockState;
  * rather than along a line: a position along the axis, then a random offset
  * within a radius of it. A line reads as a row of dots, whereas a filled
  * volume reads as air catching light.
- *
- * <h2>Why a custom particle</h2>
- *
- * <p>Motes use {@link ModParticles#DUST_MOTE} rather than anything vanilla.
- * No vanilla particle is simultaneously tintable, long lived, and free of
- * built in motion: {@code DUST} divides its lifetime by its size,
- * {@code WHITE_ASH} hardcodes a pale grey and decelerates a velocity of its
- * own, and {@code SPORE_BLOSSOM_AIR} hardcodes green. See
- * {@link DustMoteParticle} for what the replacement controls.
- *
- * <p>Its lifetime of 240 to 480 ticks is far longer than any of those, so
- * spawn rates here are correspondingly low: steady state count is spawn rate
- * multiplied by lifetime.
  */
 public final class AmbientParticleController {
 
@@ -54,16 +58,8 @@ public final class AmbientParticleController {
 	 */
 	private static final float SAMPLE_GATE = 0.003F;
 
-	/**
-	 * Chance a surviving candidate becomes a shaft, per source. Low because each
-	 * shaft is many motes, and lower again because the custom mote lives roughly
-	 * eight times as long as the vanilla particle it replaced. Steady state
-	 * count is spawn rate multiplied by lifetime, so a longer lived particle
-	 * needs a proportionally lower rate to look the same.
-	 */
+	/** Chance a surviving candidate becomes a shaft, per source. */
 	private static final float CAVE_SHAFT_CHANCE = 0.011F;
-	private static final float FOREST_SHAFT_CHANCE = 0.012F;
-	private static final float JUNGLE_SHAFT_CHANCE = 0.018F;
 
 	/** Sky light at or below which a position counts as enclosed. */
 	private static final int ENCLOSED_SKY_LIGHT = 3;
@@ -72,10 +68,13 @@ public final class AmbientParticleController {
 	private static final int CAVE_CEILING_Y = 58;
 
 	/**
-	 * Sky light at or above which a canopy position counts as open enough for
-	 * motes. Keeps them in clearings and among leaves rather than inside trunks.
+	 * Sky light at or above which a surface position counts as open enough for
+	 * motes. Keeps them out of trunks and from under dense cover.
 	 */
-	private static final int CANOPY_MIN_SKY_LIGHT = 10;
+	private static final int SURFACE_MIN_SKY_LIGHT = 10;
+
+	/** Neutral grey for underground dust, which no biome above should tint. */
+	private static final int CAVE_COLOR = 0xD5D5CC;
 
 	/** Interval between diagnostic lines. */
 	private static final long DEBUG_INTERVAL_MILLIS = 5000L;
@@ -119,7 +118,7 @@ public final class AmbientParticleController {
 			return;
 		}
 
-		tryCanopyShaft(level, pos, skyLight, random, config);
+		trySurfaceShaft(level, pos, skyLight, random, config);
 	}
 
 	/**
@@ -139,38 +138,66 @@ public final class AmbientParticleController {
 			return false;
 		}
 
-		spawnVolume(level, pos, random, config, 14, 22, 5.0, 1.3, 0.10);
+		spawnVolume(level, pos, random, config, CAVE_COLOR, 14, 22, 5.0, 1.3, 0.10);
 		return true;
 	}
 
 	/**
-	 * Canopy shafts. Jungles get denser and narrower columns than other wooded
-	 * biomes, matching how much more closed a jungle canopy is.
+	 * Motes in open air, shaped and coloured by the character of the place.
+	 *
+	 * <p>Temperate ground gets almost nothing on purpose. If everywhere had
+	 * motes there would be nothing for a desert or a snowfield to feel different
+	 * from.
 	 */
-	private static void tryCanopyShaft(
+	private static void trySurfaceShaft(
 			ClientLevel level, BlockPos pos, int skyLight, RandomSource random, ParticleSettings config) {
 
-		if (skyLight < CANOPY_MIN_SKY_LIGHT) {
+		if (skyLight < SURFACE_MIN_SKY_LIGHT) {
 			return;
 		}
 
-		var biome = level.getBiome(pos);
+		BiomeCharacter character = BiomeCharacter.of(level, level.getBiome(pos), pos);
+		BiomeSettings biomes = CinematicConfig.biomes();
 
-		if (biome.is(BiomeTags.IS_JUNGLE)) {
-			if (random.nextFloat() < JUNGLE_SHAFT_CHANCE * config.jungleRayDensity * config.density) {
-				spawnVolume(level, pos, random, config, 18, 28, 7.0, 0.85, 0.32);
-			}
+		float chance = baseChanceFor(character)
+				* biomes.apply(character, character.particleMultiplier())
+				* config.surfaceMoteDensity
+				* config.density;
 
+		if (random.nextFloat() >= chance) {
 			return;
 		}
 
-		if (!biome.is(BiomeTags.IS_FOREST) && !biome.is(BiomeTags.IS_TAIGA)) {
-			return;
-		}
+		switch (character) {
+			// Dust hangs in a wide, nearly shapeless body of air rather than in
+			// a shaft, and leans hard because arid country is exposed.
+			case ARID -> spawnVolume(level, pos, random, config, character.moteColor(), 16, 26, 6.5, 2.2, 0.45);
 
-		if (random.nextFloat() < FOREST_SHAFT_CHANCE * config.forestMoteDensity * config.density) {
-			spawnVolume(level, pos, random, config, 12, 20, 6.0, 1.0, 0.26);
+			// Blown snow is scattered and near horizontal rather than columnar.
+			case FROZEN -> spawnVolume(level, pos, random, config, character.moteColor(), 14, 24, 7.0, 2.0, 0.55);
+
+			// The canopy shaft, narrow and defined, as before.
+			case WOODED -> spawnVolume(level, pos, random, config, character.moteColor(), 16, 26, 7.0, 0.9, 0.30);
+
+			// Thick still air. Barely moving, low and close.
+			case SWAMP -> spawnVolume(level, pos, random, config, character.moteColor(), 10, 16, 4.0, 1.8, 0.08);
+
+			default -> spawnVolume(level, pos, random, config, character.moteColor(), 8, 14, 5.5, 1.4, 0.25);
 		}
+	}
+
+	/** How often each character produces motes at all, before any configuration. */
+	private static float baseChanceFor(BiomeCharacter character) {
+		return switch (character) {
+			case WOODED -> 0.018F;
+			case ARID -> 0.016F;
+			case FROZEN -> 0.015F;
+			case SWAMP -> 0.010F;
+			// Deliberately sparse, so that somewhere with character reads as
+			// different rather than as merely more of the same.
+			case HIGHLAND -> 0.003F;
+			case TEMPERATE -> 0.004F;
+		};
 	}
 
 	/**
@@ -191,11 +218,14 @@ public final class AmbientParticleController {
 			BlockPos pos,
 			RandomSource random,
 			ParticleSettings config,
+			int color,
 			int minMotes,
 			int maxMotes,
 			double length,
 			double radius,
 			double maxLean) {
+
+		ColorParticleOption mote = ColorParticleOption.create(ModParticles.DUST_MOTE, color);
 
 		// Shape and size come from the baseline for this source, scaled by the
 		// user's multipliers, so taste is expressed without needing to know the
@@ -224,7 +254,7 @@ public final class AmbientParticleController {
 			double offsetZ = (random.nextDouble() * 2.0 - 1.0) * radius;
 
 			level.addParticle(
-					ModParticles.DUST_MOTE,
+					mote,
 					originX + leanX * along + offsetX,
 					originY - along,
 					originZ + leanZ * along + offsetZ,

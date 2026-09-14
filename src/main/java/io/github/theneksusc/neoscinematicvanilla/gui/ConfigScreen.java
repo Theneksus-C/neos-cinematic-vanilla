@@ -1,5 +1,6 @@
 package io.github.theneksusc.neoscinematicvanilla.gui;
 
+import io.github.theneksusc.neoscinematicvanilla.config.BiomeSettings;
 import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
 import io.github.theneksusc.neoscinematicvanilla.config.ConfigPresets;
 import io.github.theneksusc.neoscinematicvanilla.config.FogSettings;
@@ -81,6 +82,7 @@ public class ConfigScreen extends OptionsSubScreen {
 		ParticleSettings particles = CinematicConfig.particles();
 
 		addPresets();
+		addBiomeSection(CinematicConfig.biomes());
 		addFogSection(fog);
 		addParticleSection(particles);
 		addMoteAppearanceSection(particles);
@@ -134,6 +136,35 @@ public class ConfigScreen extends OptionsSubScreen {
 		this.minecraft.setScreenAndShow(new ConfigScreen(this.lastScreen));
 	}
 
+	/**
+	 * How strongly each kind of place differs from ordinary ground.
+	 *
+	 * <p>One control per character rather than per biome. These are classified
+	 * from climate, so six cover every biome in the game and every modded one
+	 * too, where sixty named sliders would cover vanilla and nothing else.
+	 *
+	 * <p>Each value is a distance from neutral, not a strength. At 0 that kind of
+	 * place behaves like ordinary ground rather than losing its atmosphere.
+	 */
+	private void addBiomeSection(BiomeSettings biomes) {
+		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.biomes"));
+
+		this.list.addSmall(
+				toggle("biomes.enabled", biomes.enabled, v -> CinematicConfig.biomes().enabled = v),
+				multiplier("biomes.strength", biomes.strength, v -> CinematicConfig.biomes().strength = v));
+
+		this.list.addSmall(
+				multiplier("biomes.arid", biomes.arid, v -> CinematicConfig.biomes().arid = v),
+				multiplier("biomes.frozen", biomes.frozen, v -> CinematicConfig.biomes().frozen = v));
+
+		this.list.addSmall(
+				multiplier("biomes.swamp", biomes.swamp, v -> CinematicConfig.biomes().swamp = v),
+				multiplier("biomes.wooded", biomes.wooded, v -> CinematicConfig.biomes().wooded = v));
+
+		this.list.addBig(
+				multiplier("biomes.highland", biomes.highland, v -> CinematicConfig.biomes().highland = v));
+	}
+
 	private void addFogSection(FogSettings fog) {
 		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.fog"));
 
@@ -174,23 +205,16 @@ public class ConfigScreen extends OptionsSubScreen {
 
 		this.list.addSmall(
 				multiplier("particles.cave", particles.caveDustDensity, v -> CinematicConfig.particles().caveDustDensity = v),
-				multiplier("particles.forest", particles.forestMoteDensity, v -> CinematicConfig.particles().forestMoteDensity = v));
-
-		this.list.addBig(multiplier("particles.jungle", particles.jungleRayDensity,
-				v -> CinematicConfig.particles().jungleRayDensity = v));
+				multiplier("particles.surface", particles.surfaceMoteDensity,
+						v -> CinematicConfig.particles().surfaceMoteDensity = v));
 	}
 
 	private void addMoteAppearanceSection(ParticleSettings particles) {
 		this.list.addHeader(Component.translatable("neoscinematicvanilla.section.mote_appearance"));
 
-		int rgb = particles.moteColorRgb();
-
-		this.list.addSmall(
-				colorChannel("particles.color_red", 16, (rgb >> 16) & 0xFF),
-				colorChannel("particles.color_green", 8, (rgb >> 8) & 0xFF));
-
-		this.list.addSmall(
-				colorChannel("particles.color_blue", 0, rgb & 0xFF),
+		// Colour is absent by design. It comes from the character of the place,
+		// so a single chosen colour would flatten every biome back into one.
+		this.list.addBig(
 				ratio("particles.opacity", particles.moteOpacity, v -> CinematicConfig.particles().moteOpacity = v));
 
 		this.list.addSmall(
@@ -392,19 +416,6 @@ public class ConfigScreen extends OptionsSubScreen {
 	/** A whole second slider. */
 	private static OptionInstance<Integer> seconds(String key, int min, int max, int current, IntConsumer setter) {
 		return integerSlider(key, min, max, current, setter, v -> v + "s");
-	}
-
-	/**
-	 * A single colour channel. Reads the current colour, replaces one byte, and
-	 * writes the whole value back, so the three channel sliders compose without
-	 * needing to share state.
-	 */
-	private static OptionInstance<Integer> colorChannel(String key, int shift, int current) {
-		return integerSlider(key, 0, 255, current, value -> {
-			ParticleSettings particles = CinematicConfig.particles();
-			int without = particles.moteColorRgb() & ~(0xFF << shift);
-			particles.moteColor = String.format("#%06X", without | (value << shift));
-		}, String::valueOf);
 	}
 
 	private static OptionInstance<Integer> integerSlider(

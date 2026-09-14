@@ -6,6 +6,7 @@ import io.github.theneksusc.neoscinematicvanilla.particle.DustMoteParticle;
 import io.github.theneksusc.neoscinematicvanilla.particle.ModParticles;
 import io.github.theneksusc.neoscinematicvanilla.sound.ModSounds;
 import io.github.theneksusc.neoscinematicvanilla.wind.WindDriver;
+import io.github.theneksusc.neoscinematicvanilla.world.EnvironmentTracker;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry;
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ public class NeosCinematicVanillaClient implements ClientModInitializer {
 
 		ModSounds.register();
 		ModKeys.register();
+		EnvironmentTracker.register();
 		WindDriver.register();
 
 		LOGGER.info("Neo's Cinematic Vanilla initialised");
