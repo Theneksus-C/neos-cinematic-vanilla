@@ -1,5 +1,6 @@
 package io.github.theneksusc.neoscinematicvanilla.fog;
 
+import io.github.theneksusc.neoscinematicvanilla.NeosCinematicVanillaClient;
 import io.github.theneksusc.neoscinematicvanilla.config.FogConfig;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -61,14 +62,21 @@ public final class FogController {
 	/** Additional density contributed by thunder, on top of rain. */
 	private static final float MAX_THUNDER_DENSITY = 0.15F;
 
-	/**
-	 * The band at full density, as multiples of render distance. These land
-	 * near the Nether's authored 10 to 96 band at default render distance.
-	 * There is deliberately no matching pair for zero density: that end of the
-	 * interpolation is vanilla's own output.
-	 */
+	/** Near edge of the band at full density, as a multiple of render distance. */
 	private static final float DENSE_NEAR_FACTOR = 0.04F;
-	private static final float DENSE_FAR_FACTOR = 0.40F;
+
+	/**
+	 * Fog strength at full density, expressed as the fraction of full fog
+	 * reached at render distance. Vanilla's Overworld default works out to
+	 * roughly 0.25 at 16 chunks. Values above 1 saturate before the far plane,
+	 * which is what a cave needs.
+	 *
+	 * <p>Density is mapped onto this rather than onto the far edge directly.
+	 * The far edge starts at 1024 while useful viewing distances are a few
+	 * hundred blocks, so interpolating it moves the visible result far too
+	 * little at low densities.
+	 */
+	private static final float DENSE_FOG_FRACTION = 2.5F;
 
 	/** Keeps the near edge away from the far edge, which would otherwise read as a wall. */
 	private static final float MIN_BAND_WIDTH = 8.0F;
@@ -78,6 +86,11 @@ public final class FogController {
 
 	/** Smoothed density, carried between frames so changes in surroundings ease in. */
 	private static float smoothedDensity;
+
+	/** Throttles diagnostic output to roughly one line every two seconds at 60 fps. */
+	private static final int DEBUG_LOG_INTERVAL_FRAMES = 120;
+
+	private static int debugFrameCounter;
 
 	private FogController() {
 	}
@@ -113,22 +126,38 @@ public final class FogController {
 			return;
 		}
 
-		float denseStart = renderDistance * DENSE_NEAR_FACTOR * config.startDistance;
-		float denseEnd = renderDistance * DENSE_FAR_FACTOR * config.endDistance;
+		float vanillaStart = fog.environmentalStart;
+		float vanillaEnd = fog.environmentalEnd;
+		float vanillaSpan = vanillaEnd - vanillaStart;
 
-		// Interpolating away from vanilla's own values is what makes zero
-		// density identical to no mod at all, at any render distance, and it
-		// leaves vanilla's rain offset intact underneath.
-		float start = Mth.lerp(smoothedDensity, fog.environmentalStart, denseStart);
-		float end = Mth.lerp(smoothedDensity, fog.environmentalEnd, denseEnd);
+		if (vanillaSpan <= 0.0F) {
+			return;
+		}
+
+		// How much of full fog vanilla reaches at render distance. Anchoring the
+		// interpolation here rather than on the far edge keeps zero density
+		// identical to vanilla while making low densities actually visible.
+		float vanillaFraction = (renderDistance - vanillaStart) / vanillaSpan;
+		float targetFraction = Mth.lerp(smoothedDensity, vanillaFraction, DENSE_FOG_FRACTION * config.endDistance);
+
+		if (targetFraction <= 0.0F) {
+			return;
+		}
+
+		float start = Mth.lerp(smoothedDensity, vanillaStart, renderDistance * DENSE_NEAR_FACTOR * config.startDistance);
+		float end = start + (renderDistance - start) / targetFraction;
 
 		// Guards a configuration that would otherwise thin fog below vanilla,
 		// which is never the intent of this mod.
-		end = Math.min(end, fog.environmentalEnd);
-		start = Math.min(start, end - MIN_BAND_WIDTH);
+		end = Math.min(end, vanillaEnd);
+		end = Math.max(end, start + MIN_BAND_WIDTH);
 
 		fog.environmentalStart = start;
 		fog.environmentalEnd = end;
+
+		if (config.debugLogging) {
+			logSample(start, end, renderDistance, camera);
+		}
 	}
 
 	/**
@@ -179,5 +208,41 @@ public final class FogController {
 	/** Clears carried state so that re-entering a world does not inherit the previous one's fog. */
 	public static void reset() {
 		smoothedDensity = 0.0F;
+	}
+
+	/**
+	 * Reports the resulting band and the fog fraction it produces at a few
+	 * distances, so tuning can be judged against numbers rather than
+	 * impressions. Enabled by the debugLogging config flag and throttled to
+	 * roughly one line every two seconds.
+	 */
+	private static void logSample(float start, float end, float renderDistance, Camera camera) {
+		if (debugFrameCounter++ % DEBUG_LOG_INTERVAL_FRAMES != 0) {
+			return;
+		}
+
+		NeosCinematicVanillaClient.LOGGER.info(
+				"fog: y={} density={} band={}..{} renderDistance={} fogAt64={} fogAt128={} fogAt256={}",
+				String.format("%.1f", camera.position().y),
+				String.format("%.3f", smoothedDensity),
+				String.format("%.1f", start),
+				String.format("%.1f", end),
+				String.format("%.0f", renderDistance),
+				String.format("%.2f", fogFractionAt(64.0F, start, end)),
+				String.format("%.2f", fogFractionAt(128.0F, start, end)),
+				String.format("%.2f", fogFractionAt(256.0F, start, end)));
+	}
+
+	/** Mirrors linear_fog_value from vanilla's fog.glsl, for diagnostic output only. */
+	private static float fogFractionAt(float distance, float start, float end) {
+		if (distance <= start) {
+			return 0.0F;
+		}
+
+		if (distance >= end) {
+			return 1.0F;
+		}
+
+		return (distance - start) / (end - start);
 	}
 }

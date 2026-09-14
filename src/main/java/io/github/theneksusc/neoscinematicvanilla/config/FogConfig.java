@@ -57,6 +57,13 @@ public class FogConfig {
 	 */
 	public float transitionSpeed = 0.08F;
 
+	/**
+	 * Logs the resulting fog band and the fog fraction it produces at 64, 128,
+	 * and 256 blocks, roughly twice per second. Intended for tuning and for
+	 * diagnosing whether an effect is present but too weak to see.
+	 */
+	public boolean debugLogging = false;
+
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final String FILE_NAME = "neoscinematicvanilla.json";
 
