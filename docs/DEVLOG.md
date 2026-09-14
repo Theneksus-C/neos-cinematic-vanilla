@@ -122,3 +122,40 @@ longer resolve.
 older mods. Run `javap -classpath <minecraft-merged.jar> <fully.qualified.Class>`
 against the Loom cache at `~/.gradle/caches/fabric-loom/26.2/` to read the real
 signatures. Full decompiled sources are available through `gradlew genSources`.
+
+---
+
+## 2026-09-14: Visible brightness step at the altitude ceiling
+
+**Symptom:** a sudden change in brightness when crossing roughly y=135 to y=139
+on the surface. Fog appeared to switch between two states rather than fade.
+
+**Cause:** the fog band was interpolated between an assumed clear band and a
+dense band. The assumed clear band used a near edge of one render distance,
+but vanilla's actual Overworld default is a near edge of 0 with a far edge of
+1024. Those are not the same thing. A 0 to 1024 band still produces roughly a
+quarter of full fog at 256 blocks, whereas a band starting at 256 produces
+almost none. Below the altitude ceiling the mod therefore replaced vanilla's
+faint gradient with something clearer than vanilla, and above the ceiling it
+did nothing, so crossing the boundary flipped between the two.
+
+A second defect shared the same root. The assumed clear band scaled with render
+distance while vanilla's 1024 is absolute, so the two would also diverge at any
+render distance other than 16 chunks.
+
+**Resolution:** interpolate away from the values vanilla actually produced
+instead of from an assumed baseline:
+
+```java
+float start = Mth.lerp(density, fog.environmentalStart, denseStart);
+float end   = Mth.lerp(density, fog.environmentalEnd,   denseEnd);
+```
+
+At zero density this is identical to vanilla by construction, at any render
+distance, and it preserves vanilla's rain offset underneath rather than
+competing with it.
+
+**Generalisation:** when a mod blends with vanilla behaviour, one end of the
+blend must be vanilla's live output, not a constant chosen to approximate it.
+Any approximation becomes a discontinuity at the point where the effect fades
+out, and that point is exactly where it is most visible.

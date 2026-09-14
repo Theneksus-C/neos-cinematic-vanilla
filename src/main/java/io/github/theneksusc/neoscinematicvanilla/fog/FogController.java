@@ -13,10 +13,18 @@ import net.minecraft.world.level.LightLayer;
 /**
  * Computes an atmospheric fog band from the player's surroundings.
  *
- * <p>Vanilla leaves atmospheric fog switched off in the Overworld: the
- * registered defaults are a start of 0 and an end of 1024, which produces no
- * visible haze. This class fills that gap, driven by elevation, sky access, and
- * weather, while leaving dimensions that author their own fog untouched.
+ * <p>Vanilla leaves atmospheric fog close to switched off in the Overworld: the
+ * registered defaults are a start of 0 and an end of 1024, which produces a
+ * faint distance gradient rather than nothing at all. This class thickens that
+ * band in response to elevation, sky access, and weather, while leaving
+ * dimensions that author their own fog untouched.
+ *
+ * <p>The band is interpolated away from whatever vanilla produced, never from a
+ * fixed baseline. At zero density the result is exactly what vanilla would have
+ * rendered, which keeps the effect continuous as density crosses zero and keeps
+ * it correct at every render distance. An earlier version interpolated from an
+ * assumed clear band, which produced a visible brightness step wherever density
+ * reached zero, most obviously at the altitude ceiling.
  *
  * <p>Cost per frame is one light lookup and a few dozen arithmetic operations.
  * There is no world scanning, no allocation, and no iteration over blocks.
@@ -54,17 +62,19 @@ public final class FogController {
 	private static final float MAX_THUNDER_DENSITY = 0.15F;
 
 	/**
-	 * Near and far edges of the fog band, as multiples of render distance.
-	 * The clear pair reproduces vanilla's absence of fog. The dense pair lands
+	 * The band at full density, as multiples of render distance. These land
 	 * near the Nether's authored 10 to 96 band at default render distance.
+	 * There is deliberately no matching pair for zero density: that end of the
+	 * interpolation is vanilla's own output.
 	 */
-	private static final float CLEAR_NEAR_FACTOR = 1.00F;
-	private static final float CLEAR_FAR_FACTOR = 4.00F;
 	private static final float DENSE_NEAR_FACTOR = 0.04F;
 	private static final float DENSE_FAR_FACTOR = 0.40F;
 
 	/** Keeps the near edge away from the far edge, which would otherwise read as a wall. */
 	private static final float MIN_BAND_WIDTH = 8.0F;
+
+	/** Below this the band is indistinguishable from vanilla, so the work is skipped. */
+	private static final float NEGLIGIBLE_DENSITY = 0.001F;
 
 	/** Smoothed density, carried between frames so changes in surroundings ease in. */
 	private static float smoothedDensity;
@@ -99,25 +109,25 @@ public final class FogController {
 
 		smoothTowards(targetDensity(camera, level, partialTicks, config), deltaTracker, config);
 
-		if (smoothedDensity <= 0.001F) {
+		if (smoothedDensity <= NEGLIGIBLE_DENSITY) {
 			return;
 		}
 
-		float nearFactor = Mth.lerp(smoothedDensity, CLEAR_NEAR_FACTOR, DENSE_NEAR_FACTOR);
-		float farFactor = Mth.lerp(smoothedDensity, CLEAR_FAR_FACTOR, DENSE_FAR_FACTOR);
+		float denseStart = renderDistance * DENSE_NEAR_FACTOR * config.startDistance;
+		float denseEnd = renderDistance * DENSE_FAR_FACTOR * config.endDistance;
 
-		float end = renderDistance * farFactor * config.endDistance;
+		// Interpolating away from vanilla's own values is what makes zero
+		// density identical to no mod at all, at any render distance, and it
+		// leaves vanilla's rain offset intact underneath.
+		float start = Mth.lerp(smoothedDensity, fog.environmentalStart, denseStart);
+		float end = Mth.lerp(smoothedDensity, fog.environmentalEnd, denseEnd);
 
-		// Vanilla's rain handling may already have pulled the far edge closer
-		// than this. Applying a weaker band on top would undo that, so the mod
-		// only acts where it would genuinely thicken the fog.
-		if (end >= fog.environmentalEnd) {
-			return;
-		}
+		// Guards a configuration that would otherwise thin fog below vanilla,
+		// which is never the intent of this mod.
+		end = Math.min(end, fog.environmentalEnd);
+		start = Math.min(start, end - MIN_BAND_WIDTH);
 
-		float start = renderDistance * nearFactor * config.startDistance;
-
-		fog.environmentalStart = Math.min(start, end - MIN_BAND_WIDTH);
+		fog.environmentalStart = start;
 		fog.environmentalEnd = end;
 	}
 
