@@ -5,14 +5,14 @@ import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
 import io.github.theneksusc.neoscinematicvanilla.config.ParticleSettings;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Spawns sparse ambient motes in the air around the player.
+ * Spawns drifting motes suspended in the air around the player.
  *
  * <p>This runs no loop of its own. Vanilla already samples 1334 random
  * positions around the player every client tick inside
@@ -25,25 +25,26 @@ import net.minecraft.world.level.block.state.BlockState;
  * single random comparison that rejects almost every call. Everything past that
  * gate runs a few dozen times a second and can afford a biome lookup.
  *
- * <h2>Motes arrive in shafts, not singly</h2>
+ * <h2>Motes fill a volume, not a line</h2>
  *
- * <p>Every source spawns a short descending line of fine motes rather than one
- * mote at a time. A lone particle reads as an artefact; a cluster following a
- * common line reads as light catching dust in the air. Each shaft picks one
- * lean, so every mote in it follows the same angle, with slight sideways
- * scatter so the line is not ruler straight.
+ * <p>Minecraft cannot draw a beam of light, so a shaft has to be implied by
+ * what floats in it. Each spawn scatters motes through a slanted cylinder
+ * rather than along a line: a position along the axis, then a random offset
+ * within a radius of it. A line reads as a row of dots, whereas a filled
+ * volume reads as air catching light.
  *
- * <h2>Why the rates look high</h2>
+ * <h2>Why this particle</h2>
  *
- * <p>Steady state count is spawn rate multiplied by lifetime, so a short lived
- * particle needs a high rate to stay visible. {@code DUST} lives 8 to 40 ticks
- * scaled by its size, meaning well under a second at these sizes. Shafts
- * therefore shimmer and disperse rather than persisting, and the number alive
- * at any moment stays low despite the throughput.
+ * <p>Steady state count is spawn rate multiplied by lifetime, and lifetime is
+ * the scarce resource here. {@code DUST} accepts a colour and a size but
+ * divides its lifetime by that size, leaving small motes alive for well under a
+ * second. {@code SPORE_BLOSSOM_AIR} lives 500 to 1000 ticks but its provider
+ * hardcodes a green tint. {@code WHITE_ASH} lives 20 to 100 ticks with no
+ * colour override and zero gravity, which is the longest any neutral mote
+ * lasts, so it is used everywhere despite offering no size control.
  *
- * <p>{@code DUST} is also the one particle type that accepts both a packed RGB
- * colour and a scale. An earlier version used {@code SPORE_BLOSSOM_AIR}, whose
- * provider hardcodes a green tint that cannot be overridden.
+ * <p>Its provider also ignores the velocity passed to it and generates a slow
+ * drift of its own, which is why zero velocity is passed here.
  */
 public final class AmbientParticleController {
 
@@ -54,10 +55,13 @@ public final class AmbientParticleController {
 	 */
 	private static final float SAMPLE_GATE = 0.003F;
 
-	/** Chance a surviving candidate becomes a shaft, per source. */
-	private static final float CAVE_SHAFT_CHANCE = 0.30F;
-	private static final float FOREST_SHAFT_CHANCE = 0.16F;
-	private static final float JUNGLE_SHAFT_CHANCE = 0.10F;
+	/**
+	 * Chance a surviving candidate becomes a shaft, per source. Low because
+	 * each shaft is now many motes rather than one.
+	 */
+	private static final float CAVE_SHAFT_CHANCE = 0.09F;
+	private static final float FOREST_SHAFT_CHANCE = 0.10F;
+	private static final float JUNGLE_SHAFT_CHANCE = 0.14F;
 
 	/** Sky light at or below which a position counts as enclosed. */
 	private static final int ENCLOSED_SKY_LIGHT = 3;
@@ -70,18 +74,6 @@ public final class AmbientParticleController {
 	 * motes. Keeps them in clearings and among leaves rather than inside trunks.
 	 */
 	private static final int CANOPY_MIN_SKY_LIGHT = 10;
-
-	/** Neutral grey white for underground dust, with no warmth since there is no sun. */
-	private static final int CAVE_COLOR = 0xD5D5CC;
-
-	/** Warm off white above ground, suggesting motes catching sunlight rather than glowing. */
-	private static final int SUNLIT_COLOR = 0xF6EBCB;
-
-	/** Sideways scatter of each mote around its shaft line. */
-	private static final double SHAFT_JITTER = 0.09;
-
-	/** Spacing between motes along a shaft. */
-	private static final double SHAFT_SPACING = 0.55;
 
 	/** Interval between diagnostic lines. */
 	private static final long DEBUG_INTERVAL_MILLIS = 5000L;
@@ -129,9 +121,10 @@ public final class AmbientParticleController {
 	}
 
 	/**
-	 * Dust falling through deep enclosed spaces. Gated on depth as well as sky
-	 * light so that cellars and interiors at surface level stay clear. Kept
-	 * close to vertical, since there is no sun underground to angle it.
+	 * Dust suspended in deep enclosed spaces. Gated on depth as well as sky
+	 * light so that cellars and interiors at surface level stay clear. Wider and
+	 * closer to vertical than a sunlit shaft, since nothing underground angles
+	 * the light.
 	 */
 	private static boolean tryCaveShaft(
 			ClientLevel level, BlockPos pos, int skyLight, RandomSource random, ParticleSettings config) {
@@ -144,13 +137,13 @@ public final class AmbientParticleController {
 			return false;
 		}
 
-		spawnShaft(level, pos, random, config, CAVE_COLOR, 0.70F, 5, 9, 0.12);
+		spawnVolume(level, pos, random, config, 14, 22, 5.0, 1.3, 0.10);
 		return true;
 	}
 
 	/**
-	 * Canopy shafts. Jungles get denser, finer shafts than other wooded biomes,
-	 * matching how much more closed a jungle canopy is.
+	 * Canopy shafts. Jungles get denser and narrower columns than other wooded
+	 * biomes, matching how much more closed a jungle canopy is.
 	 */
 	private static void tryCanopyShaft(
 			ClientLevel level, BlockPos pos, int skyLight, RandomSource random, ParticleSettings config) {
@@ -163,7 +156,7 @@ public final class AmbientParticleController {
 
 		if (biome.is(BiomeTags.IS_JUNGLE)) {
 			if (random.nextFloat() < JUNGLE_SHAFT_CHANCE * config.jungleRayDensity * config.density) {
-				spawnShaft(level, pos, random, config, SUNLIT_COLOR, 0.45F, 10, 16, 0.35);
+				spawnVolume(level, pos, random, config, 18, 28, 7.0, 0.85, 0.32);
 			}
 
 			return;
@@ -174,51 +167,57 @@ public final class AmbientParticleController {
 		}
 
 		if (random.nextFloat() < FOREST_SHAFT_CHANCE * config.forestMoteDensity * config.density) {
-			spawnShaft(level, pos, random, config, SUNLIT_COLOR, 0.50F, 7, 11, 0.28);
+			spawnVolume(level, pos, random, config, 12, 20, 6.0, 1.0, 0.26);
 		}
 	}
 
 	/**
-	 * Places a short line of motes descending at a slight lean.
+	 * Scatters motes through a slanted cylinder, filling a volume rather than
+	 * tracing a line.
 	 *
-	 * <p>The motes are placed, not simulated. Each is small enough that its own
-	 * lifetime is well under a second, so a shaft shimmers and disperses rather
-	 * than persisting as a visible object.
+	 * <p>Each mote takes an independent position along the axis rather than an
+	 * evenly spaced one, so the result looks like suspended dust instead of a
+	 * repeating pattern. The shaft picks one lean, so all of its motes share the
+	 * same angle.
 	 *
-	 * @param scale    mote size, which also divides mote lifetime
-	 * @param maxLean  horizontal drift per block of descent
+	 * @param length  how far the shaft descends, in blocks
+	 * @param radius  how far motes scatter from the axis
+	 * @param maxLean horizontal drift per block of descent
 	 */
-	private static void spawnShaft(
+	private static void spawnVolume(
 			ClientLevel level,
 			BlockPos pos,
 			RandomSource random,
 			ParticleSettings config,
-			int color,
-			float scale,
 			int minMotes,
 			int maxMotes,
+			double length,
+			double radius,
 			double maxLean) {
-
-		DustParticleOptions mote = new DustParticleOptions(color, scale);
 
 		int count = minMotes + random.nextInt(maxMotes - minMotes + 1);
 
-		// One lean per shaft, so every mote in it follows the same line.
+		// One lean per shaft, so every mote in it follows the same angle.
 		double leanX = (random.nextDouble() * 2.0 - 1.0) * maxLean;
 		double leanZ = (random.nextDouble() * 2.0 - 1.0) * maxLean;
 
-		double x = pos.getX() + random.nextDouble();
-		double y = pos.getY() + random.nextDouble();
-		double z = pos.getZ() + random.nextDouble();
+		double originX = pos.getX() + random.nextDouble();
+		double originY = pos.getY() + random.nextDouble();
+		double originZ = pos.getZ() + random.nextDouble();
 
 		for (int i = 0; i < count; i++) {
-			double along = i * SHAFT_SPACING;
+			double along = random.nextDouble() * length;
+
+			// Offsets are drawn independently rather than as a true disc, which
+			// is cheaper and indistinguishable once motes are this scattered.
+			double offsetX = (random.nextDouble() * 2.0 - 1.0) * radius;
+			double offsetZ = (random.nextDouble() * 2.0 - 1.0) * radius;
 
 			level.addParticle(
-					mote,
-					x + leanX * along + (random.nextDouble() * 2.0 - 1.0) * SHAFT_JITTER,
-					y - along,
-					z + leanZ * along + (random.nextDouble() * 2.0 - 1.0) * SHAFT_JITTER,
+					ParticleTypes.WHITE_ASH,
+					originX + leanX * along + offsetX,
+					originY - along,
+					originZ + leanZ * along + offsetZ,
 					0.0,
 					0.0,
 					0.0);
