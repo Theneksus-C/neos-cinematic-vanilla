@@ -47,3 +47,23 @@ after the edit is required.
 **Generalisation:** "command not found" on Windows usually indicates a PATH
 problem rather than a missing installation. Verify presence on disk before
 reinstalling anything.
+
+---
+
+## 2026-09-14: Project folder could not be renamed while in use
+
+**Symptom:** renaming the project directory failed with "Device or resource
+busy" under Bash and "The process cannot access the file because it is being
+used by another process" under PowerShell.
+
+**Cause:** Windows locks a directory that is the current working directory of a
+live process. The editor session had the project folder open as its working
+directory, so the handle was held continuously. This is a Windows behaviour and
+differs from Linux, where renaming a directory that a process sits in succeeds.
+
+**Resolution:** moved the session working directory to the parent folder first,
+then performed the rename.
+
+**Generalisation:** on Windows, close or relocate anything sitting inside a
+directory before renaming or deleting it. Terminals, editors, and file explorer
+windows all hold locks.

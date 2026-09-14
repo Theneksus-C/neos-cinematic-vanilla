@@ -1,4 +1,4 @@
-# Cinematic Vanilla
+# Neo's Cinematic Vanilla
 
 A client-side Minecraft mod that makes the vanilla world feel more physical,
 atmospheric, and alive without altering gameplay, progression, building, or
@@ -19,6 +19,19 @@ game".
 5. Directional and distance-based positional ambience
 6. Improved rain and snow visuals
 7. A subtle environmental wind system
+
+## Identity
+
+| Field | Value |
+| --- | --- |
+| Display name | Neo's Cinematic Vanilla |
+| Mod ID | `neoscinematicvanilla` |
+| Java package | `io.github.theneksusc.neoscinematicvanilla` |
+| Repository | `neos-cinematic-vanilla` |
+
+Mod IDs and Java packages cannot contain apostrophes, spaces, or capital
+letters, so the display name and the internal identifiers differ by necessity.
+Only the display name appears in the in-game mod list.
 
 ## Stack
 
