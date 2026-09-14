@@ -3,7 +3,7 @@
 	"id": "neoscinematicvanilla",
 	"version": "${version}",
 	"name": "Neo's Cinematic Vanilla",
-	"description": "Makes the vanilla world feel physical, atmospheric, and alive without changing gameplay, progression, building, or Minecraft's visual identity.",
+	"description": "Adds atmospheric effects to the vanilla world: dynamic fog, ambient particles, falling leaves, environmental sound, weather visuals, and wind. Gameplay and world generation are unchanged.",
 	"authors": [
 		"Theneksus-C"
 	],

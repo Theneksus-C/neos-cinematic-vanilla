@@ -1,14 +1,19 @@
 # Neo's Cinematic Vanilla
 
-A client-side Minecraft mod that makes the vanilla world feel more physical,
-atmospheric, and alive without altering gameplay, progression, building, or
-Minecraft's visual identity.
+A client-side Minecraft mod that adds atmospheric effects to the vanilla world:
+dynamic fog, ambient particles, falling leaves, environmental sound, improved
+weather visuals, and wind.
 
-## Philosophy
+Gameplay, progression, world generation, and the appearance of blocks and items
+are unchanged.
 
-Vanilla Minecraft, plus atmosphere. Every effect is subtle by default. The
-intended reaction is "why does this feel more alive", not "this is a different
-game".
+## Design constraints
+
+- Effects are subtle by default.
+- Everything is client-side. The mod does not need to be installed on a server.
+- Features are individually configurable.
+- Systems share one cached environment sample rather than each scanning the
+  world independently, to limit per-frame cost.
 
 ## Planned features
 
@@ -30,8 +35,7 @@ game".
 | Repository | `neos-cinematic-vanilla` |
 
 Mod IDs and Java packages cannot contain apostrophes, spaces, or capital
-letters, so the display name and the internal identifiers differ by necessity.
-Only the display name appears in the in-game mod list.
+letters, so the display name and the internal identifiers differ.
 
 ## Stack
 
@@ -47,6 +51,22 @@ Only the display name appears in the in-game mod list.
 
 Minecraft 26.1 was the first unobfuscated release, so this project uses
 Mojang's official names directly. No Yarn mappings are involved.
+
+## Building
+
+```
+gradlew build
+```
+
+Output is written to `build/libs/`.
+
+## Running a development client
+
+```
+gradlew runClient
+```
+
+Launches Minecraft with the mod loaded. The game directory is `run/`.
 
 ## Status
 
