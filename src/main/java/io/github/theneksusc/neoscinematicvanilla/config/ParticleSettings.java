@@ -21,13 +21,13 @@ public class ParticleSettings {
 	/** Scales every particle source below. */
 	public float density = 1.0F;
 
-	/** Dust motes suspended in caves and other deep enclosed spaces. */
+	/** Shafts of motes in caves and other deep enclosed spaces. */
 	public float caveDustDensity = 1.0F;
 
-	/** Motes among the canopy in forest and taiga biomes. */
+	/** Shafts of motes among the canopy in forest and taiga biomes. */
 	public float forestMoteDensity = 1.0F;
 
-	/** Motes among the canopy in jungles, which are denser and narrower. */
+	/** Shafts of motes in jungles, which are denser and narrower than other canopies. */
 	public float jungleRayDensity = 1.0F;
 
 	/**

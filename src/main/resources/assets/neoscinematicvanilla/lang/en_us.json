@@ -35,8 +35,8 @@
 
   "neoscinematicvanilla.option.particles.enabled": "Ambient Particles",
   "neoscinematicvanilla.option.particles.density": "Particle Density",
-  "neoscinematicvanilla.option.particles.cave": "Cave Dust",
-  "neoscinematicvanilla.option.particles.forest": "Forest Motes",
+  "neoscinematicvanilla.option.particles.cave": "Cave Shafts",
+  "neoscinematicvanilla.option.particles.forest": "Forest Shafts",
   "neoscinematicvanilla.option.particles.jungle": "Jungle Shafts",
   "neoscinematicvanilla.option.particles.color_red": "Mote Colour: Red",
   "neoscinematicvanilla.option.particles.color_green": "Mote Colour: Green",
