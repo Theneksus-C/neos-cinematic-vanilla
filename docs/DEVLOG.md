@@ -75,3 +75,30 @@ creating, writing, or deleting files inside that directory. When a rename is
 refused and no shell is sitting in the folder, copy and delete instead of
 hunting for the process holding the handle. Always verify `git log` in the copy
 before removing the original.
+
+---
+
+## 2026-09-14: Rewritten commit history did not clear the GitHub contributor list
+
+**Symptom:** after stripping a `Co-Authored-By` trailer from every commit with
+`git filter-branch` and force pushing, the repository still displayed a second
+contributor on its GitHub page.
+
+**Cause:** two separate caches. GitHub recomputes the contributor list
+asynchronously rather than on push, so the badge continued to serve stale data
+while the underlying commits were already clean. Querying the contributors API
+directly returned an empty list, confirming a rebuild was in progress rather
+than a failed rewrite.
+
+Separately, `git filter-branch` preserves the pre-rewrite state under
+`.git/refs/original/`. Those refs keep the old commits reachable, so
+`git log --all` still showed the removed trailer locally even though both
+branches pointed at rewritten commits.
+
+**Resolution:** verified the rewrite through the GitHub commits API rather than
+the rendered page, then deleted `.git/refs/original` to drop the local backup
+refs. No new repository was needed.
+
+**Generalisation:** verify a push through the API, not the web UI, when a page
+element looks stale. After any `filter-branch`, delete the backup refs or the
+old history stays reachable locally and looks like the rewrite failed.
