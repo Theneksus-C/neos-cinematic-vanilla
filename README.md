@@ -50,7 +50,8 @@ Mojang's official names directly. No Yarn mappings are involved.
 
 ## Status
 
-Project setup. No mod code yet.
+Base build working. The mod compiles, packages, and loads on Minecraft 26.2.
+No atmosphere features implemented yet.
 
 ## Documentation
 

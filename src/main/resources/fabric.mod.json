@@ -1,0 +1,22 @@
+{
+	"schemaVersion": 1,
+	"id": "neoscinematicvanilla",
+	"version": "${version}",
+	"name": "Neo's Cinematic Vanilla",
+	"description": "Makes the vanilla world feel physical, atmospheric, and alive without changing gameplay, progression, building, or Minecraft's visual identity.",
+	"authors": [
+		"Theneksus-C"
+	],
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"io.github.theneksusc.neoscinematicvanilla.NeosCinematicVanillaClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

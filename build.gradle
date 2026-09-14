@@ -1,0 +1,46 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+repositories {
+	// Loom automatically adds the repositories needed for Minecraft itself.
+	// Entries belong here only when depending on other people's mods.
+}
+
+loom {
+	// Declares which source sets belong to this mod. A client-only mod keeps
+	// everything in the main source set, so no environment split is needed.
+	mods {
+		"neoscinematicvanilla" {
+			sourceSet sourceSets.main
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+processResources {
+	// Substitutes the project version into fabric.mod.json at build time, so
+	// the version is declared in exactly one place.
+	def version = project.version
+	inputs.property "version", version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
