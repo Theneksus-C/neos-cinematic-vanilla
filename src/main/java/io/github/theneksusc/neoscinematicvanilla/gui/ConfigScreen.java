@@ -181,6 +181,13 @@ public class ConfigScreen extends OptionsSubScreen {
 				multiplier("fog.end_distance", fog.endDistance, v -> CinematicConfig.fog().endDistance = v));
 
 		this.list.addSmall(
+				multiplier("fog.dawn_mist", fog.dawnMist, v -> CinematicConfig.fog().dawnMist = v),
+				multiplier("fog.dusk_haze", fog.duskHaze, v -> CinematicConfig.fog().duskHaze = v));
+
+		this.list.addBig(
+				multiplier("fog.night_haze", fog.nightHaze, v -> CinematicConfig.fog().nightHaze = v));
+
+		this.list.addSmall(
 				multiplier("fog.start_distance", fog.startDistance, v -> CinematicConfig.fog().startDistance = v),
 				ratio("fog.transition_speed", fog.transitionSpeed, v -> CinematicConfig.fog().transitionSpeed = v));
 

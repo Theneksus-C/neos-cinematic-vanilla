@@ -26,6 +26,22 @@ public class FogSettings {
 	/** Additional density during rain and thunderstorms. */
 	public float weatherInfluence = 1.0F;
 
+	/**
+	 * Mist that gathers around sunrise and burns off through the morning.
+	 *
+	 * <p>Deliberately the strongest thing the fog system does. It lasts a couple
+	 * of minutes out of a full day, so it reads as a moment rather than as a
+	 * filter over everything, which is what earns it being stronger than the
+	 * effects that are always present.
+	 */
+	public float dawnMist = 1.0F;
+
+	/** Haze that settles around sunset. Milder and broader than dawn. */
+	public float duskHaze = 1.0F;
+
+	/** Gentle haze through the small hours. */
+	public float nightHaze = 1.0F;
+
 	/** Scales where fog begins. Above 1 pushes the near edge further away. */
 	public float startDistance = 1.0F;
 

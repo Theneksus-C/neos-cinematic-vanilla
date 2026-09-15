@@ -4,6 +4,7 @@ import io.github.theneksusc.neoscinematicvanilla.NeosCinematicVanillaClient;
 import io.github.theneksusc.neoscinematicvanilla.config.CinematicConfig;
 import io.github.theneksusc.neoscinematicvanilla.config.FogSettings;
 import io.github.theneksusc.neoscinematicvanilla.world.EnvironmentTracker;
+import io.github.theneksusc.neoscinematicvanilla.world.TimeOfDay;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -54,6 +55,22 @@ public final class FogController {
 
 	/** Additional density contributed by thunder, on top of rain. */
 	private static final float MAX_THUNDER_DENSITY = 0.15F;
+
+	/**
+	 * Peak density contributed by dawn mist.
+	 *
+	 * <p>Deliberately larger than any other surface term, roughly double the
+	 * altitude haze. It is present for about two minutes of a twenty minute day,
+	 * so it reads as a moment the world passes through rather than as a
+	 * permanent filter, which is what earns it being the strongest effect here.
+	 */
+	private static final float MAX_DAWN_DENSITY = 0.30F;
+
+	/** Peak density at dusk. Milder than dawn and spread over longer. */
+	private static final float MAX_DUSK_DENSITY = 0.14F;
+
+	/** Peak density through the small hours. Gentle. */
+	private static final float MAX_NIGHT_DENSITY = 0.09F;
 
 	/** Near edge of the band at full density, as a multiple of render distance. */
 	private static final float DENSE_NEAR_FACTOR = 0.04F;
@@ -149,7 +166,7 @@ public final class FogController {
 		fog.environmentalEnd = end;
 
 		if (config.debugLogging) {
-			logSample(start, end, renderDistance, camera);
+			logSample(start, end, renderDistance, camera, level);
 		}
 	}
 
@@ -185,10 +202,18 @@ public final class FogController {
 		float thunder = level.getThunderLevel(partialTicks);
 		float weather = (rain * MAX_RAIN_DENSITY + thunder * MAX_THUNDER_DENSITY) * config.weatherInfluence;
 
+		// Mist gathers in low ground, so the time terms are gated by the same
+		// altitude ramp as the haze. That makes dawn mist pool in valleys and
+		// leave peaks clear without any extra machinery.
+		float time = altitudeFactor * (
+				TimeOfDay.dawnMist(level) * MAX_DAWN_DENSITY * config.dawnMist
+						+ TimeOfDay.duskHaze(level) * MAX_DUSK_DENSITY * config.duskHaze
+						+ TimeOfDay.nightHaze(level) * MAX_NIGHT_DENSITY * config.nightHaze);
+
 		// Where the player is thickens or thins the air: swamps hold fog, peaks
 		// shed it. Applied to the surface terms only, since the biome overhead
 		// says nothing about the air inside a cave.
-		float surface = (altitude + weather) * EnvironmentTracker.fogMultiplier();
+		float surface = (altitude + weather + time) * EnvironmentTracker.fogMultiplier();
 
 		// Weather is not visible underground, so the two paths compete for the
 		// result rather than stacking into something denser than either.
@@ -229,14 +254,15 @@ public final class FogController {
 	 * impressions. Enabled by the debugLogging config flag and throttled to
 	 * roughly one line every two seconds.
 	 */
-	private static void logSample(float start, float end, float renderDistance, Camera camera) {
+	private static void logSample(float start, float end, float renderDistance, Camera camera, ClientLevel level) {
 		if (debugFrameCounter++ % DEBUG_LOG_INTERVAL_FRAMES != 0) {
 			return;
 		}
 
 		NeosCinematicVanillaClient.LOGGER.info(
-				"fog: y={} density={} band={}..{} renderDistance={} fogAt64={} fogAt128={} fogAt256={}",
+				"fog: y={} phase={} density={} band={}..{} renderDistance={} fogAt64={} fogAt128={} fogAt256={}",
 				String.format("%.1f", camera.position().y),
+				TimeOfDay.phaseName(level),
 				String.format("%.3f", smoothedDensity),
 				String.format("%.1f", start),
 				String.format("%.1f", end),
