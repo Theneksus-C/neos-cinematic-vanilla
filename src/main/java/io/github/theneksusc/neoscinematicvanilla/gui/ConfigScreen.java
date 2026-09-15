@@ -407,7 +407,7 @@ public class ConfigScreen extends OptionsSubScreen {
 
 		return new OptionInstance<>(
 				translationKey(key),
-				OptionInstance.noTooltip(),
+				tooltipFor(key),
 				(caption, value) -> valueLabel(caption, String.format("%.2f", value)),
 				new OptionInstance.IntRange(0, steps)
 						.xmap(v -> v / (double) STEPS_PER_UNIT, v -> (int) Math.round(v * STEPS_PER_UNIT), true),
@@ -435,7 +435,7 @@ public class ConfigScreen extends OptionsSubScreen {
 
 		return new OptionInstance<>(
 				translationKey(key),
-				OptionInstance.noTooltip(),
+				tooltipFor(key),
 				(caption, value) -> valueLabel(caption, format.apply(value)),
 				new OptionInstance.IntRange(min, max),
 				Math.max(min, Math.min(max, current)),
@@ -443,7 +443,22 @@ public class ConfigScreen extends OptionsSubScreen {
 	}
 
 	private static OptionInstance<Boolean> toggle(String key, boolean current, Consumer<Boolean> setter) {
-		return OptionInstance.createBoolean(translationKey(key), current, setter::accept);
+		return OptionInstance.createBoolean(translationKey(key), tooltipFor(key), current, setter::accept);
+	}
+
+	/**
+	 * Builds the tooltip for an option from its own key.
+	 *
+	 * <p>Derived rather than passed, so an option cannot be added without its
+	 * explanation. A missing entry shows the raw key on screen, which is ugly
+	 * enough to be noticed immediately rather than quietly shipping.
+	 *
+	 * <p>Cached, since the tooltip is rebuilt whenever the value changes and
+	 * these are constant text.
+	 */
+	private static <T> OptionInstance.TooltipSupplier<T> tooltipFor(String key) {
+		return OptionInstance.cachedConstantTooltip(
+				Component.translatable(translationKey(key) + ".tooltip"));
 	}
 
 	private static String translationKey(String key) {
