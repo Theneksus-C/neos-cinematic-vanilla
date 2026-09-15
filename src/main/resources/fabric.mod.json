@@ -3,10 +3,16 @@
 	"id": "neoscinematicvanilla",
 	"version": "${version}",
 	"name": "Neo's Cinematic Vanilla",
-	"description": "Adds atmospheric effects to the vanilla world: dynamic fog, ambient particles, falling leaves, environmental sound, weather visuals, and wind. Gameplay and world generation are unchanged.",
+	"description": "Makes the vanilla world feel like a place: fog that responds to altitude, caves, weather and the hour, motes drifting on a shared wind, biomes with their own character, and optional film grain. Client side only. Gameplay and world generation are unchanged.",
 	"authors": [
 		"Theneksus-C"
 	],
+	"license": "MIT",
+	"contact": {
+		"homepage": "https://github.com/Theneksus-C/neos-cinematic-vanilla",
+		"sources": "https://github.com/Theneksus-C/neos-cinematic-vanilla",
+		"issues": "https://github.com/Theneksus-C/neos-cinematic-vanilla/issues"
+	},
 	"environment": "client",
 	"entrypoints": {
 		"client": [

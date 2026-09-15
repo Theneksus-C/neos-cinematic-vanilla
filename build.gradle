@@ -38,6 +38,14 @@ tasks.withType(JavaCompile).configureEach {
 	it.options.release = 25
 }
 
+// Ship the licence inside the jar, so the terms travel with the file rather
+// than only with the repository.
+jar {
+	from("LICENSE") {
+		rename { "${it}_${project.base.archivesName.get()}" }
+	}
+}
+
 java {
 	withSourcesJar()
 
